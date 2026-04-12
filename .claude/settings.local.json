@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(yaml|json|lock|txt|md\\)$\")",
+      "Bash(find /e/Projects/flutter-projects/luxihub_handyman/lib -type f -exec ls -lh {} \\\\;)",
+      "Bash(awk '{print $6, $7, $8, $9}')"
+    ]
+  }
+}
