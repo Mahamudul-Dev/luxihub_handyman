@@ -33,6 +33,10 @@ class AppRoutes {
     name: 'RegistrationTerms',
     path: '/registration/terms',
   );
+  static const RouteModel jobRequests = RouteModel(
+    name: 'JobRequests',
+    path: '/job-requests',
+  );
   static const RouteModel wallet = RouteModel(
     name: 'Wallet',
     path: '/wallet',
@@ -40,6 +44,18 @@ class AppRoutes {
   static const RouteModel withdrawals = RouteModel(
     name: 'Withdrawals',
     path: '/wallet/withdrawals',
+  );
+  static const RouteModel inbox = RouteModel(
+    name: 'Inbox',
+    path: '/inbox',
+  );
+  static const RouteModel profile = RouteModel(
+    name: 'Profile',
+    path: '/profile',
+  );
+  static const RouteModel chat = RouteModel(
+    name: 'Chat',
+    path: '/chat',
   );
   static const RouteModel jobRequestDetails = RouteModel(
     name: 'JobRequestDetails',

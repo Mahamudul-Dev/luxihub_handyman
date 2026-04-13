@@ -11,6 +11,9 @@ class PageWrapper extends StatelessWidget {
   static const _routes = [
     AppRoutes.dashboard,
     AppRoutes.wallet,
+    AppRoutes.jobRequests,
+    AppRoutes.inbox,
+    AppRoutes.profile,
   ];
 
   int _currentIndex(BuildContext context) {

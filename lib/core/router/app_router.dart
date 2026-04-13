@@ -11,7 +11,11 @@ import 'package:luxihub_handyman/features/authentication/presentation/pages/regi
 import 'package:luxihub_handyman/features/authentication/presentation/pages/registration_page.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/pages/registration_service_area_page.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/pages/registration_terms_page.dart';
+import 'package:luxihub_handyman/features/chat/presentation/pages/chat_page.dart';
+import 'package:luxihub_handyman/features/chat/presentation/pages/inbox_page.dart';
 import 'package:luxihub_handyman/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_page.dart';
+import 'package:luxihub_handyman/features/profile/presentation/pages/profile_page.dart';
 import 'package:luxihub_handyman/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:luxihub_handyman/features/wallet/presentation/pages/withdrawals_page.dart';
 
@@ -37,6 +41,21 @@ final GoRouter appRouter = GoRouter(
           name: AppRoutes.withdrawals.name,
           path: AppRoutes.withdrawals.path,
           builder: (context, state) => const WithdrawalsPage(),
+        ),
+        GoRoute(
+          name: AppRoutes.jobRequests.name,
+          path: AppRoutes.jobRequests.path,
+          builder: (context, state) => const JobRequestPage(),
+        ),
+        GoRoute(
+          name: AppRoutes.inbox.name,
+          path: AppRoutes.inbox.path,
+          builder: (context, state) => const InboxPage(),
+        ),
+        GoRoute(
+          name: AppRoutes.profile.name,
+          path: AppRoutes.profile.path,
+          builder: (context, state) => const ProfilePage(),
         ),
       ],
     ),
@@ -93,6 +112,17 @@ final GoRouter appRouter = GoRouter(
       name: AppRoutes.jobRequestDetails.name,
       path: AppRoutes.jobRequestDetails.path,
       builder: (context, state) => const JobRequestDetailsPage(),
+    ),
+    GoRoute(
+      name: AppRoutes.chat.name,
+      path: AppRoutes.chat.path,
+      builder: (context, state) {
+        final extra = state.extra as ({String clientName, String jobCategory});
+        return ChatPage(
+          clientName: extra.clientName,
+          jobCategory: extra.jobCategory,
+        );
+      },
     ),
   ],
 );
