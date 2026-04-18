@@ -21,6 +21,8 @@ dependencies:
   bloc: ^9.2.0
   dio: ^5.9.2
   equatable: ^2.0.8
+  dartz: ^0.10.1
+  get_it: ^8.0.2
 
 
 dev_dependencies:
