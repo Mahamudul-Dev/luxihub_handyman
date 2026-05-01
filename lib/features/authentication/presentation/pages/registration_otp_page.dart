@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_event.dart';
@@ -11,8 +10,16 @@ import 'package:luxihub_handyman/features/authentication/presentation/widgets/ot
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/registration_step_indicator.dart';
 
 class RegistrationOtpPage extends StatefulWidget {
-  final String phone;
-  const RegistrationOtpPage({super.key, required this.phone});
+  final String identifier;
+  final bool isPhone;
+  final String nextRoute;
+
+  const RegistrationOtpPage({
+    super.key,
+    required this.identifier,
+    required this.isPhone,
+    required this.nextRoute,
+  });
 
   @override
   State<RegistrationOtpPage> createState() => _RegistrationOtpPageState();
@@ -21,15 +28,27 @@ class RegistrationOtpPage extends StatefulWidget {
 class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
   String _otp = '';
 
+  bool get _isRegistration => widget.nextRoute != '/';
+
   void _verify() {
     if (_otp.length < 6) return;
-    context.read<AuthBloc>().add(
-          AuthOtpVerifyRequested(phone: widget.phone, token: _otp),
-        );
+    if (widget.isPhone) {
+      context.read<AuthBloc>().add(
+            AuthPhoneOtpVerifyRequested(phone: widget.identifier, token: _otp),
+          );
+    } else {
+      context.read<AuthBloc>().add(
+            AuthEmailOtpVerifyRequested(email: widget.identifier, token: _otp),
+          );
+    }
   }
 
   void _resend() {
-    context.read<AuthBloc>().add(AuthSignInWithPhoneRequested(widget.phone));
+    if (widget.isPhone) {
+      context.read<AuthBloc>().add(AuthPhoneOtpSendRequested(widget.identifier));
+    } else {
+      context.read<AuthBloc>().add(AuthEmailOtpSendRequested(widget.identifier));
+    }
   }
 
   @override
@@ -37,7 +56,7 @@ class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          context.go(AppRoutes.registrationLocation.path);
+          context.go(widget.nextRoute);
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
@@ -52,20 +71,19 @@ class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const RegistrationStepIndicator(currentStep: 2, totalSteps: 8),
-                SizedBox(height: 32.h),
+                if (_isRegistration)
+                  const RegistrationStepIndicator(currentStep: 2, totalSteps: 8),
+                if (_isRegistration) SizedBox(height: 32.h),
 
-                // ── Heading ────────────────────────────────────────────────
                 Text('Verify OTP', style: AppTextStyles.headlineMedium),
                 SizedBox(height: 6.h),
                 Text(
-                  'Enter the 6-digit code sent to ${widget.phone}.',
+                  'Enter the 6-digit code sent to ${widget.identifier}.',
                   style: AppTextStyles.bodyMedium,
                 ),
 
                 SizedBox(height: 40.h),
 
-                // ── OTP boxes ──────────────────────────────────────────────
                 OtpInputField(
                   length: 6,
                   onCompleted: (value) => setState(() => _otp = value),
@@ -73,7 +91,6 @@ class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
 
                 SizedBox(height: 32.h),
 
-                // ── Resend ─────────────────────────────────────────────────
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -89,7 +106,6 @@ class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
 
                 const Spacer(),
 
-                // ── Verify button ──────────────────────────────────────────
                 BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, state) {
                     final loading = state is AuthLoading;

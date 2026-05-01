@@ -61,7 +61,7 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
     try {
       final res = await client
           .from('job_requests')
-          .select('id, amount, category, completed_at, profiles!client_id(full_name)')
+          .select('id, amount, category, completed_at, profiles!client_id(name)')
           .eq('provider_id', providerId)
           .eq('status', 'completed')
           .order('completed_at', ascending: false)
@@ -69,7 +69,7 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
 
       return (res as List<dynamic>).map((json) {
         final clientName =
-            (json['profiles'] as Map<String, dynamic>?)?['full_name'] as String? ?? '';
+            (json['profiles'] as Map<String, dynamic>?)?['name'] as String? ?? '';
         return EarningModel(
           id: json['id'] as String,
           clientName: clientName,
@@ -88,7 +88,7 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
     try {
       final res = await client
           .from('job_requests')
-          .select('*, attachments(storage_path)')
+          .select('*, job_attachments(storage_path), profiles!client_id(name)')
           .eq('status', 'pending')
           .order('posted_at', ascending: false)
           .limit(5);

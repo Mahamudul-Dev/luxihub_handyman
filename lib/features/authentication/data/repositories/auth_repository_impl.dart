@@ -6,13 +6,13 @@ import 'package:luxihub_handyman/features/authentication/domain/entities/auth_us
 import 'package:luxihub_handyman/features/authentication/domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDatasource datasource;
-  const AuthRepositoryImpl(this.datasource);
+  final AuthRemoteDataSource dataSource;
+  const AuthRepositoryImpl(this.dataSource);
 
   @override
-  Future<Either<Failure, void>> signInWithPhone(String phone) async {
+  Future<Either<Failure, void>> sendPhoneOtp(String phone) async {
     try {
-      await datasource.signInWithPhone(phone);
+      await dataSource.sendPhoneOtp(phone);
       return const Right(null);
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
@@ -22,12 +22,12 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, AppUser>> verifyOtp({
+  Future<Either<Failure, AppUser>> verifyPhoneOtp({
     required String phone,
     required String token,
   }) async {
     try {
-      final model = await datasource.verifyOtp(phone: phone, token: token);
+      final model = await dataSource.verifyPhoneOtp(phone: phone, token: token);
       return Right(model.toEntity());
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
@@ -37,13 +37,54 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, AppUser>> signInWithEmail({
+  Future<Either<Failure, void>> sendEmailOtp(String email) async {
+    try {
+      await dataSource.sendEmailOtp(email);
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AppUser>> verifyEmailOtp({
+    required String email,
+    required String token,
+  }) async {
+    try {
+      final model = await dataSource.verifyEmailOtp(email: email, token: token);
+      return Right(model.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AppUser>> signUpWithPassword({
     required String email,
     required String password,
   }) async {
     try {
-      final model = await datasource.signInWithEmail(
-          email: email, password: password);
+      final model = await dataSource.signUpWithPassword(email: email, password: password);
+      return Right(model.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AppUser>> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final model = await dataSource.signInWithPassword(email: email, password: password);
       return Right(model.toEntity());
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
@@ -55,7 +96,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> signOut() async {
     try {
-      await datasource.signOut();
+      await dataSource.signOut();
       return const Right(null);
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
@@ -67,7 +108,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, AppUser?>> getCurrentUser() async {
     try {
-      final model = datasource.getCurrentUser();
+      final model = dataSource.getCurrentUser();
       return Right(model?.toEntity());
     } catch (e) {
       return Left(ServerFailure(e.toString()));

@@ -3,6 +3,7 @@ import 'package:luxihub_handyman/features/jobs/domain/entities/job_request.dart'
 class JobRequestModel {
   final String id;
   final String clientId;
+  final String? clientName;
   final String? providerId;
   final String category;
   final String description;
@@ -15,6 +16,7 @@ class JobRequestModel {
   const JobRequestModel({
     required this.id,
     required this.clientId,
+    this.clientName,
     this.providerId,
     required this.category,
     required this.description,
@@ -28,6 +30,7 @@ class JobRequestModel {
   factory JobRequestModel.fromJson(Map<String, dynamic> json) => JobRequestModel(
         id: json['id'] as String,
         clientId: json['client_id'] as String,
+        clientName: (json['profiles'] as Map<String, dynamic>?)?['name'] as String?,
         providerId: json['provider_id'] as String?,
         category: json['category'] as String,
         description: json['description'] as String,
@@ -35,7 +38,7 @@ class JobRequestModel {
         clientLat: (json['client_lat'] as num).toDouble(),
         clientLng: (json['client_lng'] as num).toDouble(),
         postedAt: json['posted_at'] as String,
-        attachmentPaths: (json['attachments'] as List<dynamic>?)
+        attachmentPaths: (json['job_attachments'] as List<dynamic>?)
                 ?.map((e) => e['storage_path'] as String)
                 .toList() ??
             [],
@@ -44,6 +47,7 @@ class JobRequestModel {
   JobRequest toEntity() => JobRequest(
         id: id,
         clientId: clientId,
+        clientName: clientName,
         providerId: providerId,
         category: category,
         description: description,

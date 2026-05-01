@@ -28,13 +28,13 @@ class AuthUnauthenticated extends AuthState {
   const AuthUnauthenticated();
 }
 
-/// OTP has been sent to the phone — waiting for user to enter the code.
 class AuthOtpSent extends AuthState {
-  final String phone;
-  const AuthOtpSent(this.phone);
+  final String identifier;
+  final bool isPhone;
+  const AuthOtpSent({required this.identifier, required this.isPhone});
 
   @override
-  List<Object> get props => [phone];
+  List<Object> get props => [identifier, isPhone];
 }
 
 class AuthError extends AuthState {

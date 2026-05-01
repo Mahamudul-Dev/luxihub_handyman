@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
@@ -57,10 +56,11 @@ GoRouter createAppRouter(AuthBloc authBloc) {
     initialLocation: AppRoutes.login.path,
     refreshListenable: notifier,
     redirect: (context, state) {
-      final authState = context.read<AuthBloc>().state;
+      final authState = authBloc.state;
       final isPublic = _publicRoutes.contains(state.matchedLocation);
 
       if (authState is AuthLoading || authState is AuthInitial) return null;
+      if (authState is AuthOtpSent) return null;
 
       if (authState is AuthAuthenticated) {
         return isPublic ? AppRoutes.dashboard.path : null;
@@ -122,8 +122,13 @@ GoRouter createAppRouter(AuthBloc authBloc) {
         name: AppRoutes.registrationOtp.name,
         path: AppRoutes.registrationOtp.path,
         builder: (context, state) {
-          final phone = state.extra as String? ?? '';
-          return RegistrationOtpPage(phone: phone);
+          final extra = state.extra
+              as ({String identifier, bool isPhone, String nextRoute});
+          return RegistrationOtpPage(
+            identifier: extra.identifier,
+            isPhone: extra.isPhone,
+            nextRoute: extra.nextRoute,
+          );
         },
       ),
       GoRoute(
@@ -165,10 +170,12 @@ GoRouter createAppRouter(AuthBloc authBloc) {
         name: AppRoutes.chat.name,
         path: AppRoutes.chat.path,
         builder: (context, state) {
-          final extra = state.extra as ({String clientName, String jobCategory});
+          final extra = state.extra
+              as ({String clientName, String jobCategory, String conversationId});
           return ChatPage(
             clientName: extra.clientName,
             jobCategory: extra.jobCategory,
+            conversationId: extra.conversationId,
           );
         },
       ),

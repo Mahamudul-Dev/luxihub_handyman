@@ -5,10 +5,13 @@ import 'package:luxihub_handyman/features/authentication/data/datasources/auth_r
 import 'package:luxihub_handyman/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:luxihub_handyman/features/authentication/domain/repositories/auth_repository.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/get_current_user.dart';
-import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_in_with_email.dart';
-import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_in_with_phone.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/send_email_otp.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/send_phone_otp.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_in_with_password.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_out.dart';
-import 'package:luxihub_handyman/features/authentication/domain/usecases/verify_otp.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_up_with_password.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/verify_email_otp.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/verify_phone_otp.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 
 import 'package:luxihub_handyman/features/profile/data/datasources/profile_remote_datasource.dart';
@@ -58,21 +61,27 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton<SupabaseClient>(() => Supabase.instance.client);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  sl.registerLazySingleton<AuthRemoteDatasource>(
-      () => AuthRemoteDatasourceImpl(sl()));
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+      () => AuthRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(sl()));
-  sl.registerLazySingleton(() => SignInWithPhone(sl()));
-  sl.registerLazySingleton(() => VerifyOtp(sl()));
-  sl.registerLazySingleton(() => SignInWithEmail(sl()));
+  sl.registerLazySingleton(() => SendPhoneOtp(sl()));
+  sl.registerLazySingleton(() => VerifyPhoneOtp(sl()));
+  sl.registerLazySingleton(() => SendEmailOtp(sl()));
+  sl.registerLazySingleton(() => VerifyEmailOtp(sl()));
   sl.registerLazySingleton(() => SignOut(sl()));
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
+  sl.registerLazySingleton(() => SignUpWithPassword(sl()));
+  sl.registerLazySingleton(() => SignInWithPassword(sl()));
   sl.registerLazySingleton(() => AuthBloc(
-        signInWithPhone: sl(),
-        verifyOtp: sl(),
-        signInWithEmail: sl(),
+        sendPhoneOtp: sl(),
+        verifyPhoneOtp: sl(),
+        sendEmailOtp: sl(),
+        verifyEmailOtp: sl(),
         signOut: sl(),
         getCurrentUser: sl(),
+        signUpWithPassword: sl(),
+        signInWithPassword: sl(),
       ));
 
   // ── Profile ───────────────────────────────────────────────────────────────

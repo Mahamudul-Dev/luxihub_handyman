@@ -17,7 +17,7 @@ void main() async {
     anonKey: SupabaseConfig.anonKey,
   );
 
-  await setupServiceLocator();
+  await setupServiceLocator(); 
 
   final authBloc = sl<AuthBloc>()..add(const AuthCheckRequested());
 

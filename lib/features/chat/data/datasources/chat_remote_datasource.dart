@@ -23,7 +23,7 @@ class ChatRemoteDatasourceImpl implements ChatRemoteDatasource {
     try {
       final data = await client
           .from('conversations')
-          .select()
+          .select('*, profiles!client_id(name), job_requests!job_request_id(category)')
           .eq('provider_id', providerId)
           .order('last_message_at', ascending: false);
       return (data as List).map((e) => ConversationModel.fromJson(e)).toList();

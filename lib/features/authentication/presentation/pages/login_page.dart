@@ -9,6 +9,9 @@ import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_state.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/password_text_field.dart';
 
+// TODO: Switch back to OTP-based login (AuthPhoneOtpSendRequested /
+// AuthEmailOtpSendRequested) once Twilio is configured in Supabase.
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -32,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text;
     if (email.isEmpty || password.isEmpty) return;
     context.read<AuthBloc>().add(
-          AuthSignInWithEmailRequested(email: email, password: password),
+          AuthPasswordSignInRequested(email: email, password: password),
         );
   }
 
@@ -57,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 SizedBox(height: 48.h),
 
-                // ── Logo ────────────────────────────────────────────────────
                 Image.asset(
                   'assets/app_logo.png',
                   height: 80.h,
@@ -66,7 +68,6 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 28.h),
 
-                // ── Welcome text ─────────────────────────────────────────────
                 Text(
                   'Welcome Back!',
                   style: AppTextStyles.headlineMedium,
@@ -81,25 +82,22 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 40.h),
 
-                // ── Email field ───────────────────────────────────────────────
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: AppTextStyles.inputText,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    prefixIcon: Icon(Icons.person_outline_rounded, size: 20.r),
+                    prefixIcon: Icon(Icons.email_outlined, size: 20.r),
                   ),
                 ),
 
                 SizedBox(height: 16.h),
 
-                // ── Password field ────────────────────────────────────────────
                 PasswordTextField(controller: _passwordController),
 
                 SizedBox(height: 4.h),
 
-                // ── Forgot password ───────────────────────────────────────────
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -110,31 +108,21 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 28.h),
 
-                // ── Terms & conditions ────────────────────────────────────────
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
                     style: AppTextStyles.bodySmall,
                     children: [
-                      const TextSpan(
-                        text: 'By clicking Sign In, you agree with our\n',
-                      ),
-                      TextSpan(
-                        text: 'Terms and Conditions',
-                        style: AppTextStyles.link,
-                      ),
+                      const TextSpan(text: 'By clicking Sign In, you agree with our\n'),
+                      TextSpan(text: 'Terms and Conditions', style: AppTextStyles.link),
                       const TextSpan(text: ' and '),
-                      TextSpan(
-                        text: 'Privacy Policy',
-                        style: AppTextStyles.link,
-                      ),
+                      TextSpan(text: 'Privacy Policy', style: AppTextStyles.link),
                     ],
                   ),
                 ),
 
                 SizedBox(height: 28.h),
 
-                // ── Sign In button ────────────────────────────────────────────
                 BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, state) {
                     final loading = state is AuthLoading;
@@ -156,7 +144,6 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: 32.h),
 
-                // ── Sign up prompt ────────────────────────────────────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

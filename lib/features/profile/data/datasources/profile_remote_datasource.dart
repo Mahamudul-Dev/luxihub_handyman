@@ -14,6 +14,11 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
   @override
   Future<ProfileModel> getProfile(String userId) async {
     try {
+      // Upsert ensures a profile row exists for users who signed up
+      // before the trigger was in place.
+      await client
+          .from('profiles')
+          .upsert({'id': userId}, onConflict: 'id');
       final data = await client
           .from('profiles')
           .select('*, skills(name)')

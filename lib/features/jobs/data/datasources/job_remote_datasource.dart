@@ -18,7 +18,7 @@ class JobRemoteDatasourceImpl implements JobRemoteDatasource {
     try {
       final data = await client
           .from('job_requests')
-          .select('*, job_attachments(storage_path)')
+          .select('*, job_attachments(storage_path), profiles!client_id(name)')
           .or('provider_id.eq.$providerId,status.eq.pending')
           .order('posted_at', ascending: false);
       return (data as List).map((e) => JobRequestModel.fromJson(e)).toList();
@@ -32,7 +32,7 @@ class JobRemoteDatasourceImpl implements JobRemoteDatasource {
     try {
       final data = await client
           .from('job_requests')
-          .select('*, job_attachments(storage_path)')
+          .select('*, job_attachments(storage_path), profiles!client_id(name)')
           .eq('id', jobId)
           .single();
       return JobRequestModel.fromJson(data);

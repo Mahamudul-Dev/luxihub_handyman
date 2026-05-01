@@ -23,8 +23,8 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
     try {
       final data = await client
           .from('wallet')
+          .upsert({'id': profileId, 'balance': 0.0}, onConflict: 'id')
           .select()
-          .eq('id', profileId)
           .single();
       return WalletModel.fromJson(data);
     } catch (e) {

@@ -5,20 +5,20 @@ import 'package:luxihub_handyman/core/usecases/usecase.dart';
 import 'package:luxihub_handyman/features/authentication/domain/entities/auth_user.dart';
 import 'package:luxihub_handyman/features/authentication/domain/repositories/auth_repository.dart';
 
-class VerifyOtp implements UseCase<AppUser, VerifyOtpParams> {
+class VerifyEmailOtp extends UseCase<AppUser, VerifyEmailOtpParams> {
   final AuthRepository repository;
-  const VerifyOtp(this.repository);
+  VerifyEmailOtp(this.repository);
 
   @override
-  Future<Either<Failure, AppUser>> call(VerifyOtpParams params) =>
-      repository.verifyOtp(phone: params.phone, token: params.token);
+  Future<Either<Failure, AppUser>> call(VerifyEmailOtpParams params) =>
+      repository.verifyEmailOtp(email: params.email, token: params.token);
 }
 
-class VerifyOtpParams extends Equatable {
-  final String phone;
+class VerifyEmailOtpParams extends Equatable {
+  final String email;
   final String token;
-  const VerifyOtpParams({required this.phone, required this.token});
+  const VerifyEmailOtpParams({required this.email, required this.token});
 
   @override
-  List<Object> get props => [phone, token];
+  List<Object> get props => [email, token];
 }

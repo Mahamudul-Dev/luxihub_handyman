@@ -5,19 +5,20 @@ import 'package:luxihub_handyman/core/usecases/usecase.dart';
 import 'package:luxihub_handyman/features/authentication/domain/entities/auth_user.dart';
 import 'package:luxihub_handyman/features/authentication/domain/repositories/auth_repository.dart';
 
-class SignInWithEmail implements UseCase<AppUser, SignInWithEmailParams> {
+// Temporary: used while Twilio/OTP is not configured.
+class SignUpWithPassword extends UseCase<AppUser, SignUpWithPasswordParams> {
   final AuthRepository repository;
-  const SignInWithEmail(this.repository);
+  SignUpWithPassword(this.repository);
 
   @override
-  Future<Either<Failure, AppUser>> call(SignInWithEmailParams params) =>
-      repository.signInWithEmail(email: params.email, password: params.password);
+  Future<Either<Failure, AppUser>> call(SignUpWithPasswordParams params) =>
+      repository.signUpWithPassword(email: params.email, password: params.password);
 }
 
-class SignInWithEmailParams extends Equatable {
+class SignUpWithPasswordParams extends Equatable {
   final String email;
   final String password;
-  const SignInWithEmailParams({required this.email, required this.password});
+  const SignUpWithPasswordParams({required this.email, required this.password});
 
   @override
   List<Object> get props => [email, password];
