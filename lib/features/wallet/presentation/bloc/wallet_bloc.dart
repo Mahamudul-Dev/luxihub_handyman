@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:luxihub_handyman/features/wallet/domain/usecases/get_stripe_onboarding_url.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/get_wallet_balance.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/get_withdrawals.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/request_withdrawal.dart';
@@ -9,14 +10,17 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   final GetWalletBalance getWalletBalance;
   final GetWithdrawals getWithdrawals;
   final RequestWithdrawal requestWithdrawal;
+  final GetStripeOnboardingUrl getStripeOnboardingUrl;
 
   WalletBloc({
     required this.getWalletBalance,
     required this.getWithdrawals,
     required this.requestWithdrawal,
+    required this.getStripeOnboardingUrl,
   }) : super(const WalletInitial()) {
     on<WalletFetchRequested>(_onFetch);
     on<WithdrawalRequested>(_onRequestWithdrawal);
+    on<ConnectStripeRequested>(_onConnectStripe);
   }
 
   Future<void> _onFetch(WalletFetchRequested event, Emitter<WalletState> emit) async {
@@ -52,6 +56,15 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
           ));
         }
       },
+    );
+  }
+
+  Future<void> _onConnectStripe(ConnectStripeRequested event, Emitter<WalletState> emit) async {
+    emit(const WalletLoading());
+    final result = await getStripeOnboardingUrl(ProfileIdParams(event.profileId));
+    result.fold(
+      (f) => emit(WalletError(f.message)),
+      (url) => emit(StripeOnboardingUrlReady(url)),
     );
   }
 }

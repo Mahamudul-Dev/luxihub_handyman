@@ -14,11 +14,14 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
   @override
   Future<ProfileModel> getProfile(String userId) async {
     try {
-      // Upsert ensures a profile row exists for users who signed up
-      // before the trigger was in place.
-      await client
-          .from('profiles')
-          .upsert({'id': userId}, onConflict: 'id');
+      final userEmail = client.auth.currentUser?.email;
+      await client.from('profiles').upsert(
+        {
+          'id': userId,
+          if (userEmail != null) 'email': userEmail,
+        },
+        onConflict: 'id',
+      );
       final data = await client
           .from('profiles')
           .select('*, skills(name)')
@@ -43,6 +46,17 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
           .eq('id', model.id)
           .select()
           .single();
+
+      // Replace skills: delete old rows then insert new ones
+      await client.from('skills').delete().eq('profile_id', model.id);
+      if (model.skills.isNotEmpty) {
+        await client.from('skills').insert(
+          model.skills
+              .map((s) => {'profile_id': model.id, 'name': s})
+              .toList(),
+        );
+      }
+
       return ProfileModel.fromJson({...data, 'skills': model.skills});
     } catch (e) {
       throw ServerException(e.toString());

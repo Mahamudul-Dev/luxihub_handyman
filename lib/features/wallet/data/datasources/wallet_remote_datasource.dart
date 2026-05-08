@@ -12,6 +12,7 @@ abstract class WalletRemoteDatasource {
     required String bankName,
     required String accountLast4,
   });
+  Future<String> getStripeOnboardingUrl(String profileId);
 }
 
 class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
@@ -21,12 +22,20 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
   @override
   Future<WalletModel> getWalletBalance(String profileId) async {
     try {
-      final data = await client
+      final walletData = await client
           .from('wallet')
           .upsert({'id': profileId, 'balance': 0.0}, onConflict: 'id')
           .select()
           .single();
-      return WalletModel.fromJson(data);
+      final profileData = await client
+          .from('profiles')
+          .select('stripe_account_id')
+          .eq('id', profileId)
+          .single();
+      return WalletModel.fromJson({
+        ...walletData,
+        'stripe_account_id': profileData['stripe_account_id'],
+      });
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -62,6 +71,22 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
         'status': 'pending',
       }).select().single();
       return WithdrawalModel.fromJson(data);
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<String> getStripeOnboardingUrl(String profileId) async {
+    try {
+      final response = await client.functions.invoke(
+        'create-connect-account',
+        body: {'profile_id': profileId},
+      );
+      if (response.data == null) throw Exception('Empty response from Edge Function');
+      final url = (response.data as Map<String, dynamic>)['url'] as String?;
+      if (url == null) throw Exception('No URL in Edge Function response');
+      return url;
     } catch (e) {
       throw ServerException(e.toString());
     }

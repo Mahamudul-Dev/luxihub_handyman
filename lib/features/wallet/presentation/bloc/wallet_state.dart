@@ -35,6 +35,14 @@ class WithdrawalSuccess extends WalletState {
   List<Object> get props => [withdrawal];
 }
 
+class StripeOnboardingUrlReady extends WalletState {
+  final String url;
+  const StripeOnboardingUrlReady(this.url);
+
+  @override
+  List<Object> get props => [url];
+}
+
 class WalletError extends WalletState {
   final String message;
   const WalletError(this.message);

@@ -12,4 +12,5 @@ abstract class WalletRepository {
     required String bankName,
     required String accountLast4,
   });
+  Future<Either<Failure, String>> getStripeOnboardingUrl(String profileId);
 }

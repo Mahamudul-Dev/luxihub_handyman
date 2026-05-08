@@ -33,6 +33,7 @@ import 'package:luxihub_handyman/features/jobs/presentation/bloc/job_bloc.dart';
 import 'package:luxihub_handyman/features/wallet/data/datasources/wallet_remote_datasource.dart';
 import 'package:luxihub_handyman/features/wallet/data/repositories/wallet_repository_impl.dart';
 import 'package:luxihub_handyman/features/wallet/domain/repositories/wallet_repository.dart';
+import 'package:luxihub_handyman/features/wallet/domain/usecases/get_stripe_onboarding_url.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/get_wallet_balance.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/get_withdrawals.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/request_withdrawal.dart';
@@ -119,10 +120,12 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton(() => GetWalletBalance(sl()));
   sl.registerLazySingleton(() => GetWithdrawals(sl()));
   sl.registerLazySingleton(() => RequestWithdrawal(sl()));
+  sl.registerLazySingleton(() => GetStripeOnboardingUrl(sl()));
   sl.registerFactory(() => WalletBloc(
         getWalletBalance: sl(),
         getWithdrawals: sl(),
         requestWithdrawal: sl(),
+        getStripeOnboardingUrl: sl(),
       ));
 
   // ── Chat ──────────────────────────────────────────────────────────────────

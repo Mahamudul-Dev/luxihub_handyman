@@ -34,7 +34,7 @@ class WalletBalanceCard extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Header row ────────────────────────────────────────────────────
           Row(
@@ -96,7 +96,6 @@ class WalletBalanceCard extends StatelessWidget {
 
           // ── Withdraw button ───────────────────────────────────────────────
           SizedBox(
-            width: double.infinity,
             height: 46.h,
             child: ElevatedButton.icon(
               onPressed: onWithdraw,

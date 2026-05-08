@@ -39,3 +39,11 @@ class WithdrawalRequested extends WalletEvent {
   @override
   List<Object> get props => [profileId, amount, bankName, accountLast4];
 }
+
+class ConnectStripeRequested extends WalletEvent {
+  final String profileId;
+  const ConnectStripeRequested(this.profileId);
+
+  @override
+  List<Object> get props => [profileId];
+}

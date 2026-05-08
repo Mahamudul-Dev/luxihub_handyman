@@ -49,4 +49,14 @@ class WalletRepositoryImpl implements WalletRepository {
       return Left(ServerFailure(e.message));
     }
   }
+
+  @override
+  Future<Either<Failure, String>> getStripeOnboardingUrl(String profileId) async {
+    try {
+      final url = await datasource.getStripeOnboardingUrl(profileId);
+      return Right(url);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
 }
