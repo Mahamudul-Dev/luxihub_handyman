@@ -25,6 +25,7 @@ import 'package:luxihub_handyman/features/wallet/presentation/pages/withdrawals_
 
 import '../widgets/page_wrapper.dart';
 
+// Routes that require no auth — unauthenticated users may visit these freely.
 final _publicRoutes = {
   AppRoutes.login.path,
   AppRoutes.registration.path,
@@ -35,6 +36,14 @@ final _publicRoutes = {
   AppRoutes.registrationKycSelection.path,
   AppRoutes.registrationKycUpload.path,
   AppRoutes.registrationTerms.path,
+};
+
+// Only redirect authenticated users away from these routes (login only).
+// The registration page handles its own post-signup navigation via BlocListener,
+// so it must NOT be in this set — otherwise the router redirect fires first,
+// disposes RegistrationPage, and the BlocListener never gets to run.
+final _guestOnlyRoutes = {
+  AppRoutes.login.path,
 };
 
 class _AuthNotifier extends ChangeNotifier {
@@ -63,7 +72,9 @@ GoRouter createAppRouter(AuthBloc authBloc) {
       if (authState is AuthOtpSent) return null;
 
       if (authState is AuthAuthenticated) {
-        return isPublic ? AppRoutes.dashboard.path : null;
+        return _guestOnlyRoutes.contains(state.matchedLocation)
+            ? AppRoutes.dashboard.path
+            : null;
       }
 
       return isPublic ? null : AppRoutes.login.path;
