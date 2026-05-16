@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import 'package:luxihub_handyman/core/di/service_locator.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/core/theme/app_colors.dart';
@@ -198,17 +199,17 @@ class _WalletPageState extends State<WalletPage> {
 
             final loaded = state is WalletLoaded ? state : null;
             final recentWithdrawals = loaded?.withdrawals.take(4).toList() ?? [];
-            final stripeConnected = loaded?.wallet.stripeAccountId != null;
+            final stripeReady = loaded?.wallet.stripePayoutsEnabled ?? false;
 
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   WalletBalanceCard(
                     balance: loaded?.wallet.balance ?? 0.0,
                     onWithdraw: () {
-                      if (!stripeConnected) {
+                      if (!stripeReady) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Please connect your Stripe payout account first'),
@@ -221,7 +222,7 @@ class _WalletPageState extends State<WalletPage> {
                   ),
 
                   // ── Stripe connect banner ─────────────────────────────
-                  if (!stripeConnected && loaded != null) ...[
+                  if (!stripeReady && loaded != null) ...[
                     SizedBox(height: 16.h),
                     _StripeConnectBanner(
                       onConnect: () {
@@ -277,7 +278,9 @@ class _WalletPageState extends State<WalletPage> {
 }
 
 class _StripeConnectBanner extends StatelessWidget {
-  const _StripeConnectBanner({required this.onConnect});
+  const _StripeConnectBanner({
+    required this.onConnect,
+  });
   final VoidCallback onConnect;
 
   @override
@@ -290,7 +293,8 @@ class _StripeConnectBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: const Color(0xFFFFCC02), width: 1),
       ),
-      child: Row(
+      child: 
+      Row(
         children: [
           Icon(Icons.warning_amber_rounded,
               color: const Color(0xFFE65100), size: 28.r),
@@ -316,19 +320,21 @@ class _StripeConnectBanner extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8.w),
-          ElevatedButton(
-            onPressed: onConnect,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF635BFF),
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: onConnect,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF635BFF),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                textStyle:
+                    AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
               ),
-              textStyle:
-                  AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+              child: const Text('Connect'),
             ),
-            child: const Text('Connect'),
           ),
         ],
       ),

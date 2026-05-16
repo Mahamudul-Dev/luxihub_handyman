@@ -8,7 +8,9 @@
       "Bash(dir \"e:\\\\Projects\\\\flutter-projects\\\\luxihub_handyman\\\\lib\\\\features\\\\profile\")",
       "Bash(flutter analyze *)",
       "Bash(npx --version)",
-      "Bash(flutter pub *)"
+      "Bash(flutter pub *)",
+      "Bash(npx supabase *)",
+      "Bash(dart analyze *)"
     ]
   },
   "mcpServers": {

@@ -44,6 +44,15 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
+  Future<void> _goToEditProfile(Profile profile) async {
+    await context.push(AppRoutes.profileEdit.path, extra: profile);
+    if (!mounted) return;
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      _profileBloc.add(ProfileFetchRequested(authState.user.id));
+    }
+  }
+
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -140,6 +149,9 @@ class _ProfilePageState extends State<ProfilePage> {
               return _ProfileBody(
                 profile: profile,
                 onLogout: () => _confirmLogout(context),
+                onEditProfile: profile == null
+                    ? null
+                    : () => _goToEditProfile(profile),
               );
             },
           ),
@@ -150,10 +162,15 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 class _ProfileBody extends StatelessWidget {
-  const _ProfileBody({required this.profile, required this.onLogout});
+  const _ProfileBody({
+    required this.profile,
+    required this.onLogout,
+    this.onEditProfile,
+  });
 
   final Profile? profile;
   final VoidCallback onLogout;
+  final VoidCallback? onEditProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -384,7 +401,7 @@ class _ProfileBody extends StatelessWidget {
                 ProfileActionTile(
                   icon: Icons.edit_outlined,
                   label: 'Edit Profile',
-                  onTap: () {},
+                  onTap: onEditProfile ?? () {},
                 ),
                 ProfileActionTile(
                   icon: Icons.help_outline_rounded,

@@ -44,3 +44,11 @@ class AuthError extends AuthState {
   @override
   List<Object> get props => [message];
 }
+
+class AuthKycUploaded extends AuthState {
+  const AuthKycUploaded();
+}
+
+class AuthPendingApproval extends AuthState {
+  const AuthPendingApproval();
+}

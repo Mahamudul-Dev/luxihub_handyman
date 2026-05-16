@@ -10,6 +10,8 @@ import 'package:luxihub_handyman/features/authentication/domain/usecases/send_ph
 import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_in_with_password.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_out.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_up_with_password.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/get_account_status.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/upload_kyc_documents.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/verify_email_otp.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/verify_phone_otp.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
@@ -74,6 +76,8 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
   sl.registerLazySingleton(() => SignUpWithPassword(sl()));
   sl.registerLazySingleton(() => SignInWithPassword(sl()));
+  sl.registerLazySingleton(() => UploadKycDocuments(sl()));
+  sl.registerLazySingleton(() => GetAccountStatus(sl()));
   sl.registerLazySingleton(() => AuthBloc(
         sendPhoneOtp: sl(),
         verifyPhoneOtp: sl(),
@@ -81,6 +85,8 @@ Future<void> setupServiceLocator() async {
         verifyEmailOtp: sl(),
         signOut: sl(),
         getCurrentUser: sl(),
+        uploadKycDocuments: sl(),
+        getAccountStatus: sl(),
         signUpWithPassword: sl(),
         signInWithPassword: sl(),
       ));

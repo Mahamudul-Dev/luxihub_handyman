@@ -1,29 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 import 'package:luxihub_handyman/core/widgets/app_success_dialog.dart';
+import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
+import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_event.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/registration_step_indicator.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/terms_section.dart';
 
 class RegistrationTermsPage extends StatelessWidget {
   const RegistrationTermsPage({super.key});
 
-  void _showSuccessDialog(BuildContext context) {
+  Future<void> _submit(BuildContext context) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      await Supabase.instance.client
+          .from('profiles')
+          .update({'registration_completed_at': DateTime.now().toIso8601String()})
+          .eq('id', userId);
+    }
+
+    if (!context.mounted) return;
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AppSuccessDialog(
+      builder: (dialogCtx) => AppSuccessDialog(
         title: 'Application Submitted!',
         message:
             'Your application is under review. We will notify you once it '
             'has been approved. This usually takes 1–3 business days.',
-        buttonLabel: 'Go to Dashboard',
+        buttonLabel: 'Back to Login',
         onButtonPressed: () {
-          Navigator.of(context).pop();
-          context.go(AppRoutes.dashboard.path);
+          Navigator.of(dialogCtx).pop();
+          context.read<AuthBloc>().add(const AuthSignOutRequested());
+          context.go(AppRoutes.login.path);
         },
       ),
     );
@@ -129,7 +143,7 @@ class RegistrationTermsPage extends StatelessWidget {
                 MediaQuery.of(context).padding.bottom + 16.h,
               ),
               child: ElevatedButton(
-                onPressed: () => _showSuccessDialog(context),
+                onPressed: () => _submit(context),
                 child: const Text('Agree & Submit Application'),
               ),
             ),

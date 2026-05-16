@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:equatable/equatable.dart';
 
 abstract class AuthEvent extends Equatable {
@@ -66,4 +67,23 @@ class AuthPasswordSignInRequested extends AuthEvent {
 
 class AuthSignOutRequested extends AuthEvent {
   const AuthSignOutRequested();
+}
+
+class AuthKycUploadRequested extends AuthEvent {
+  final String userId;
+  final String documentType;
+  final File frontImage;
+  final File backImage;
+  final File selfieImage;
+
+  const AuthKycUploadRequested({
+    required this.userId,
+    required this.documentType,
+    required this.frontImage,
+    required this.backImage,
+    required this.selfieImage,
+  });
+
+  @override
+  List<Object> get props => [userId, documentType, frontImage, backImage, selfieImage];
 }

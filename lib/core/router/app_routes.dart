@@ -53,6 +53,10 @@ class AppRoutes {
     name: 'Profile',
     path: '/profile',
   );
+  static const RouteModel profileEdit = RouteModel(
+    name: 'ProfileEdit',
+    path: '/profile/edit',
+  );
   static const RouteModel chat = RouteModel(
     name: 'Chat',
     path: '/chat',

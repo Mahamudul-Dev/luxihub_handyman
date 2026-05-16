@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:luxihub_handyman/core/di/service_locator.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/core/theme/app_colors.dart';
@@ -26,16 +26,18 @@ class RegistrationServiceAreaPage extends StatefulWidget {
 class _RegistrationServiceAreaPageState
     extends State<RegistrationServiceAreaPage> {
   late final ProfileBloc _profileBloc;
-  final MapController _mapController = MapController();
+  GoogleMapController? _mapController;
 
   LatLng _center = const LatLng(3.1390, 101.6869);
   double _radiusKm = 5;
   bool _isSaving = false;
+  bool _isMapReady = false;
 
   @override
   void initState() {
     super.initState();
     _profileBloc = sl<ProfileBloc>();
+    _initCurrentLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
@@ -44,9 +46,24 @@ class _RegistrationServiceAreaPageState
     });
   }
 
+  Future<void> _initCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _center = LatLng(position.latitude, position.longitude);
+      });
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(_center, 12.0),
+      );
+    } catch (e) {
+      debugPrint('Error getting current location: $e');
+    }
+  }
+
   @override
   void dispose() {
     _profileBloc.close();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -101,38 +118,32 @@ class _RegistrationServiceAreaPageState
           return Scaffold(
             body: Stack(
               children: [
-                // ── Full screen map ─────────────────────────────────────
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _center,
-                    initialZoom: 12.0,
-                    onPositionChanged: (camera, hasGesture) {
-                      if (hasGesture) {
-                        setState(() => _center = camera.center);
-                      }
-                    },
+                // ── Google Map ──────────────────────────────────────────
+                GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: _center,
+                    zoom: 12.0,
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.luxihub.handyman',
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                    setState(() => _isMapReady = true);
+                  },
+                  onCameraMove: (position) {
+                    setState(() => _center = position.target);
+                  },
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  circles: {
+                    Circle(
+                      circleId: const CircleId('service_area'),
+                      center: _center,
+                      radius: _radiusKm * 1000,
+                      fillColor: AppColors.primary.withOpacity(0.15),
+                      strokeColor: AppColors.primary,
+                      strokeWidth: 2,
                     ),
-                    CircleLayer(
-                      circles: [
-                        CircleMarker(
-                          point: _center,
-                          radius: _radiusKm * 1000,
-                          useRadiusInMeter: true,
-                          color:
-                              AppColors.primary.withValues(alpha: 0.15),
-                          borderColor: AppColors.primary,
-                          borderStrokeWidth: 2,
-                        ),
-                      ],
-                    ),
-                  ],
+                  },
                 ),
 
                 // ── Fixed centre pin ────────────────────────────────────

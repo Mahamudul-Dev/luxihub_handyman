@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:luxihub_handyman/core/error/exceptions.dart';
 import 'package:luxihub_handyman/core/error/failures.dart';
@@ -94,6 +95,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, bool>> isAccountPendingReview(String userId) async {
+    try {
+      final result = await dataSource.isAccountPendingReview(userId);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> signOut() async {
     try {
       await dataSource.signOut();
@@ -110,6 +121,30 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final model = dataSource.getCurrentUser();
       return Right(model?.toEntity());
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> uploadKycDocuments({
+    required String userId,
+    required String documentType,
+    required File frontImage,
+    required File backImage,
+    required File selfieImage,
+  }) async {
+    try {
+      await dataSource.uploadKycDocuments(
+        userId: userId,
+        documentType: documentType,
+        frontImage: frontImage,
+        backImage: backImage,
+        selfieImage: selfieImage,
+      );
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

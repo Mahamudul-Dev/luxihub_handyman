@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:luxihub_handyman/core/error/exceptions.dart' as ex;
 import 'package:luxihub_handyman/features/authentication/data/models/auth_user_model.dart';
@@ -15,6 +16,17 @@ abstract class AuthRemoteDataSource {
 
   Future<void> signOut();
   AuthUserModel? getCurrentUser();
+
+  Future<bool> isAccountPendingReview(String userId);
+
+  // -- KYC methods --
+  Future<void> uploadKycDocuments({
+    required String userId,
+    required String documentType,
+    required File frontImage,
+    required File backImage,
+    required File selfieImage,
+  });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -134,9 +146,62 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
+  Future<bool> isAccountPendingReview(String userId) async {
+    try {
+      final data = await client
+          .from('profiles')
+          .select('registration_completed_at, is_kyc_verified')
+          .eq('id', userId)
+          .maybeSingle();
+      if (data == null) return false;
+      return data['registration_completed_at'] != null &&
+          (data['is_kyc_verified'] as bool? ?? false) == false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
   AuthUserModel? getCurrentUser() {
     final user = client.auth.currentUser;
     if (user == null) return null;
     return AuthUserModel.fromSupabaseUser(user);
+  }
+
+  @override
+  Future<void> uploadKycDocuments({
+    required String userId,
+    required String documentType,
+    required File frontImage,
+    required File backImage,
+    required File selfieImage,
+  }) async {
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      
+      // Upload front image
+      final frontPath = 'kyc/$userId/${timestamp}_front.jpg';
+      await client.storage.from('kyc-documents').upload(frontPath, frontImage);
+      
+      // Upload back image
+      final backPath = 'kyc/$userId/${timestamp}_back.jpg';
+      await client.storage.from('kyc-documents').upload(backPath, backImage);
+      
+      // Upload selfie image
+      final selfiePath = 'kyc/$userId/${timestamp}_selfie.jpg';
+      await client.storage.from('kyc-documents').upload(selfiePath, selfieImage);
+
+      // Insert record into kyc_documents table
+      await client.from('kyc_documents').insert({
+        'profile_id': userId,
+        'type': documentType,
+        'front_path': frontPath,
+        'back_path': backPath,
+        'selfie_path': selfiePath,
+        'status': 'pending',
+      });
+    } catch (e) {
+      throw ex.AuthException(e.toString());
+    }
   }
 }

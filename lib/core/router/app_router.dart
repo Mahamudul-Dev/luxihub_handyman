@@ -19,6 +19,8 @@ import 'package:luxihub_handyman/features/chat/presentation/pages/inbox_page.dar
 import 'package:luxihub_handyman/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_details_page.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_page.dart';
+import 'package:luxihub_handyman/features/profile/domain/entities/profile.dart';
+import 'package:luxihub_handyman/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:luxihub_handyman/features/profile/presentation/pages/profile_page.dart';
 import 'package:luxihub_handyman/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:luxihub_handyman/features/wallet/presentation/pages/withdrawals_page.dart';
@@ -70,6 +72,13 @@ GoRouter createAppRouter(AuthBloc authBloc) {
 
       if (authState is AuthLoading || authState is AuthInitial) return null;
       if (authState is AuthOtpSent) return null;
+
+      if (authState is AuthPendingApproval) {
+        // Keep on login (which shows the dialog); block all other routes.
+        return _guestOnlyRoutes.contains(state.matchedLocation)
+            ? null
+            : AppRoutes.login.path;
+      }
 
       if (authState is AuthAuthenticated) {
         return _guestOnlyRoutes.contains(state.matchedLocation)
@@ -134,11 +143,22 @@ GoRouter createAppRouter(AuthBloc authBloc) {
         path: AppRoutes.registrationOtp.path,
         builder: (context, state) {
           final extra = state.extra
-              as ({String identifier, bool isPhone, String nextRoute});
+              as ({String identifier, bool isPhone, String nextRoute})?;
+
+          // Fallback to query parameters if extra is lost during refresh
+          final identifier = extra?.identifier ??
+              state.uri.queryParameters['id'] ??
+              '';
+          final isPhone = extra?.isPhone ??
+              state.uri.queryParameters['phone'] == 'true';
+          final nextRoute = extra?.nextRoute ??
+              state.uri.queryParameters['next'] ??
+              AppRoutes.dashboard.path;
+
           return RegistrationOtpPage(
-            identifier: extra.identifier,
-            isPhone: extra.isPhone,
-            nextRoute: extra.nextRoute,
+            identifier: identifier,
+            isPhone: isPhone,
+            nextRoute: nextRoute,
           );
         },
       ),
@@ -173,6 +193,15 @@ GoRouter createAppRouter(AuthBloc authBloc) {
         builder: (context, state) => const RegistrationTermsPage(),
       ),
       GoRoute(
+        name: AppRoutes.profileEdit.name,
+        path: AppRoutes.profileEdit.path,
+        builder: (context, state) {
+          final profile = state.extra as Profile?;
+          if (profile == null) return const SizedBox.shrink();
+          return EditProfilePage(profile: profile);
+        },
+      ),
+      GoRoute(
         name: AppRoutes.jobRequestDetails.name,
         path: AppRoutes.jobRequestDetails.path,
         builder: (context, state) => const JobRequestDetailsPage(),
@@ -182,7 +211,18 @@ GoRouter createAppRouter(AuthBloc authBloc) {
         path: AppRoutes.chat.path,
         builder: (context, state) {
           final extra = state.extra
-              as ({String clientName, String jobCategory, String conversationId});
+              as ({
+                String clientName,
+                String jobCategory,
+                String conversationId
+              })?;
+
+          if (extra == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
           return ChatPage(
             clientName: extra.clientName,
             jobCategory: extra.jobCategory,

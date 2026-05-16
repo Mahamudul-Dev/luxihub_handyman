@@ -1,11 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:luxihub_handyman/core/usecases/usecase.dart';
+import 'package:luxihub_handyman/features/authentication/domain/entities/auth_user.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/get_account_status.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/get_current_user.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/send_email_otp.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/send_phone_otp.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_in_with_password.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_out.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/sign_up_with_password.dart';
+import 'package:luxihub_handyman/features/authentication/domain/usecases/upload_kyc_documents.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/verify_email_otp.dart';
 import 'package:luxihub_handyman/features/authentication/domain/usecases/verify_phone_otp.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_event.dart';
@@ -17,7 +20,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SendEmailOtp sendEmailOtp;
   final VerifyEmailOtp verifyEmailOtp;
   final GetCurrentUser getCurrentUser;
+  final GetAccountStatus getAccountStatus;
   final SignOut signOut;
+  final UploadKycDocuments uploadKycDocuments;
   // -- Temporary password-based usecases (remove when Twilio is configured) --
   final SignUpWithPassword signUpWithPassword;
   final SignInWithPassword signInWithPassword;
@@ -28,7 +33,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.sendEmailOtp,
     required this.verifyEmailOtp,
     required this.getCurrentUser,
+    required this.getAccountStatus,
     required this.signOut,
+    required this.uploadKycDocuments,
     required this.signUpWithPassword,
     required this.signInWithPassword,
   }) : super(const AuthInitial()) {
@@ -38,9 +45,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthEmailOtpSendRequested>(_onSendEmailOtp);
     on<AuthEmailOtpVerifyRequested>(_onVerifyEmailOtp);
     on<AuthSignOutRequested>(_onSignOut);
+    on<AuthKycUploadRequested>(_onKycUpload);
     // -- Temporary password-based handlers --
     on<AuthPasswordSignUpRequested>(_onPasswordSignUp);
     on<AuthPasswordSignInRequested>(_onPasswordSignIn);
+  }
+
+  Future<void> _emitAuthenticatedOrPending(AppUser user, Emitter<AuthState> emit) async {
+    final statusResult = await getAccountStatus(GetAccountStatusParams(user.id));
+    final isPending = statusResult.fold((_) => false, (p) => p);
+    emit(isPending ? const AuthPendingApproval() : AuthAuthenticated(user));
   }
 
   Future<void> _onCheckRequested(
@@ -49,10 +63,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     final result = await getCurrentUser(const NoParams());
-    result.fold(
-      (_) => emit(const AuthUnauthenticated()),
-      (user) => user != null
-          ? emit(AuthAuthenticated(user))
+    await result.fold(
+      (_) async => emit(const AuthUnauthenticated()),
+      (user) async => user != null
+          ? await _emitAuthenticatedOrPending(user, emit)
           : emit(const AuthUnauthenticated()),
     );
   }
@@ -77,9 +91,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await verifyPhoneOtp(
       VerifyPhoneOtpParams(phone: event.phone, token: event.token),
     );
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) => emit(AuthAuthenticated(user)),
+    await result.fold(
+      (failure) async => emit(AuthError(failure.message)),
+      (user) async => _emitAuthenticatedOrPending(user, emit),
     );
   }
 
@@ -103,9 +117,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await verifyEmailOtp(
       VerifyEmailOtpParams(email: event.email, token: event.token),
     );
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) => emit(AuthAuthenticated(user)),
+    await result.fold(
+      (failure) async => emit(AuthError(failure.message)),
+      (user) async => _emitAuthenticatedOrPending(user, emit),
     );
   }
 
@@ -118,6 +132,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     result.fold(
       (failure) => emit(AuthError(failure.message)),
       (_) => emit(const AuthUnauthenticated()),
+    );
+  }
+
+  Future<void> _onKycUpload(
+    AuthKycUploadRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    final result = await uploadKycDocuments(UploadKycDocumentsParams(
+      userId: event.userId,
+      documentType: event.documentType,
+      frontImage: event.frontImage,
+      backImage: event.backImage,
+      selfieImage: event.selfieImage,
+    ));
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(const AuthKycUploaded()),
     );
   }
 
@@ -144,9 +176,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await signInWithPassword(
       SignInWithPasswordParams(email: event.email, password: event.password),
     );
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) => emit(AuthAuthenticated(user)),
+    await result.fold(
+      (failure) async => emit(AuthError(failure.message)),
+      (user) async => _emitAuthenticatedOrPending(user, emit),
     );
   }
 }

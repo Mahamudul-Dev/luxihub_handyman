@@ -1,13 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/registration_step_indicator.dart';
 
-class RegistrationLocationPage extends StatelessWidget {
+class RegistrationLocationPage extends StatefulWidget {
   const RegistrationLocationPage({super.key});
+
+  @override
+  State<RegistrationLocationPage> createState() => _RegistrationLocationPageState();
+}
+
+class _RegistrationLocationPageState extends State<RegistrationLocationPage> {
+  bool _isLoading = false;
+
+  Future<void> _requestPermission() async {
+    setState(() => _isLoading = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')),
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Location permissions are permanently denied, we cannot request permissions.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        context.push(AppRoutes.registrationDetails.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +133,17 @@ class RegistrationLocationPage extends StatelessWidget {
 
               // ── Enable button ─────────────────────────────────────────────
               ElevatedButton(
-                onPressed: () =>
-                    context.push(AppRoutes.registrationDetails.path),
-                child: const Text('Enable Location'),
+                onPressed: _isLoading ? null : _requestPermission,
+                child: _isLoading
+                    ? SizedBox(
+                        height: 20.r,
+                        width: 20.r,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Enable Location'),
               ),
 
               SizedBox(height: 12.h),

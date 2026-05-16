@@ -54,15 +54,22 @@ Deno.serve(async (req) => {
 
       await serviceClient
         .from('profiles')
-        .update({ stripe_account_id: accountId })
+        .update({ stripe_account_id: accountId, stripe_payouts_enabled: false })
+        .eq('id', user.id);
+    } else {
+      // Sync latest payouts_enabled from Stripe into the DB
+      const existing = await stripe.accounts.retrieve(accountId);
+      await serviceClient
+        .from('profiles')
+        .update({ stripe_payouts_enabled: existing.payouts_enabled ?? false })
         .eq('id', user.id);
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      // These deep-link URLs let the app re-open after Stripe onboarding
-      refresh_url: 'https://ewxxivbbgyvgnjkwjgse.supabase.co/functions/v1/create-connect-account',
-      return_url: 'luxihub://stripe-return',
+      refresh_url: `${supabaseUrl}/functions/v1/create-connect-account`,
+      return_url: `${supabaseUrl}/functions/v1/stripe-connect-return?pid=${user.id}`,
       type: 'account_onboarding',
     });
 

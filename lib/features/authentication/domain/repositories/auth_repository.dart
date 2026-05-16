@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:luxihub_handyman/core/error/failures.dart';
 import 'package:luxihub_handyman/features/authentication/domain/entities/auth_user.dart';
@@ -13,4 +14,13 @@ abstract class AuthRepository {
 
   Future<Either<Failure, void>> signOut();
   Future<Either<Failure, AppUser?>> getCurrentUser();
+  Future<Either<Failure, bool>> isAccountPendingReview(String userId);
+
+  Future<Either<Failure, void>> uploadKycDocuments({
+    required String userId,
+    required String documentType,
+    required File frontImage,
+    required File backImage,
+    required File selfieImage,
+  });
 }

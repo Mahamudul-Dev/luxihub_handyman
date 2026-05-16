@@ -29,12 +29,13 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
           .single();
       final profileData = await client
           .from('profiles')
-          .select('stripe_account_id')
+          .select('stripe_account_id, stripe_payouts_enabled')
           .eq('id', profileId)
           .single();
       return WalletModel.fromJson({
         ...walletData,
         'stripe_account_id': profileData['stripe_account_id'],
+        'stripe_payouts_enabled': profileData['stripe_payouts_enabled'],
       });
     } catch (e) {
       throw ServerException(e.toString());

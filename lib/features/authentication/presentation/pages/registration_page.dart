@@ -3,16 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
+import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_event.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_state.dart';
-import 'package:luxihub_handyman/features/authentication/presentation/widgets/password_text_field.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/registration_step_indicator.dart';
-
-// TODO: Switch back to OTP flow (AuthPhoneOtpSendRequested / AuthEmailOtpSendRequested)
-// once Twilio is configured in Supabase. The phone-toggle + OTP code is preserved
-// in registration_page_otp_backup (commented blocks below).
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -21,71 +17,70 @@ class RegistrationPage extends StatefulWidget {
   State<RegistrationPage> createState() => _RegistrationPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+// E.164: starts with +, 8–15 digits total
+final _phoneRegex = RegExp(r'^\+[1-9]\d{7,14}$');
+final _emailRegex = RegExp(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$');
 
-  // -- OTP mode (re-enable when Twilio is ready) --
-  // bool _usePhone = true;
-  // final _otpIdentifierController = TextEditingController();
+class _RegistrationPageState extends State<RegistrationPage> {
+  bool _usePhone = true;
+  final _identifierController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    // _otpIdentifierController.dispose();
+    _identifierController.dispose();
     super.dispose();
   }
 
-  void _onSignUp() {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    final confirm = _confirmPasswordController.text;
-
-    if (email.isEmpty || password.isEmpty) return;
-    if (password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
+  String? _validateIdentifier(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return _usePhone ? 'Enter your phone number' : 'Enter your email';
+    if (_usePhone) {
+      if (!_phoneRegex.hasMatch(v)) {
+        return 'Use international format: +60123456789';
+      }
+    } else {
+      if (!_emailRegex.hasMatch(v)) {
+        return 'Enter a valid email address';
+      }
     }
-    context.read<AuthBloc>().add(
-          AuthPasswordSignUpRequested(email: email, password: password),
-        );
+    return null;
   }
 
-  // -- OTP version of _onSendOtp (re-enable when Twilio is ready) --
-  // void _onSendOtp() {
-  //   final value = _otpIdentifierController.text.trim();
-  //   if (value.isEmpty) return;
-  //   if (_usePhone) {
-  //     context.read<AuthBloc>().add(AuthPhoneOtpSendRequested(value));
-  //   } else {
-  //     context.read<AuthBloc>().add(AuthEmailOtpSendRequested(value));
-  //   }
-  // }
+  void _onSendOtp() {
+    if (!_formKey.currentState!.validate()) return;
+    final value = _identifierController.text.trim();
+    if (_usePhone) {
+      context.read<AuthBloc>().add(AuthPhoneOtpSendRequested(value));
+    } else {
+      context.read<AuthBloc>().add(AuthEmailOtpSendRequested(value));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is AuthAuthenticated) {
-          context.go(AppRoutes.registrationLocation.path);
+        if (state is AuthOtpSent) {
+          final queryParams = {
+            'id': state.identifier,
+            'phone': state.isPhone.toString(),
+            'next': AppRoutes.registrationLocation.path,
+          };
+          
+          context.push(
+            Uri(path: AppRoutes.registrationOtp.path, queryParameters: queryParams).toString(),
+            extra: (
+              identifier: state.identifier,
+              isPhone: state.isPhone,
+              nextRoute: AppRoutes.registrationLocation.path,
+            ),
+          );
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
           );
         }
-        // -- OTP listener (re-enable when Twilio is ready) --
-        // if (state is AuthOtpSent) {
-        //   context.push(AppRoutes.registrationOtp.path, extra: (
-        //     identifier: state.identifier,
-        //     isPhone: state.isPhone,
-        //     nextRoute: AppRoutes.registrationLocation.path,
-        //   ));
-        // }
       },
       child: Scaffold(
         body: SafeArea(
@@ -100,40 +95,74 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 Text('Create Account', style: AppTextStyles.headlineMedium),
                 SizedBox(height: 6.h),
                 Text(
-                  'Enter your email and password to get started.',
+                  'Enter your ${_usePhone ? 'phone number' : 'email'} to receive a verification code.',
                   style: AppTextStyles.bodyMedium,
                 ),
 
                 SizedBox(height: 32.h),
 
-                // -- Email field --
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style: AppTextStyles.inputText,
-                  decoration: InputDecoration(
-                    hintText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined, size: 20.r),
+                // -- Phone/Email Toggle --
+                Container(
+                  padding: EdgeInsets.all(4.r),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBackground,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _ToggleButton(
+                          label: 'Phone',
+                          isSelected: _usePhone,
+                          onTap: () {
+                            setState(() => _usePhone = true);
+                            _formKey.currentState?.reset();
+                            _identifierController.clear();
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: _ToggleButton(
+                          label: 'Email',
+                          isSelected: !_usePhone,
+                          onTap: () {
+                            setState(() => _usePhone = false);
+                            _formKey.currentState?.reset();
+                            _identifierController.clear();
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                SizedBox(height: 16.h),
+                SizedBox(height: 24.h),
 
-                PasswordTextField(
-                  controller: _passwordController,
-                  hintText: 'Password',
+                // -- Identifier field --
+                Form(
+                  key: _formKey,
+                  child: TextFormField(
+                    controller: _identifierController,
+                    keyboardType: _usePhone
+                        ? TextInputType.phone
+                        : TextInputType.emailAddress,
+                    style: AppTextStyles.inputText,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: _validateIdentifier,
+                    decoration: InputDecoration(
+                      hintText: _usePhone
+                          ? 'Phone Number (e.g. +60123456789)'
+                          : 'Email Address',
+                      prefixIcon: Icon(
+                        _usePhone
+                            ? Icons.phone_android_rounded
+                            : Icons.email_outlined,
+                        size: 20.r,
+                      ),
+                    ),
+                  ),
                 ),
-
-                SizedBox(height: 16.h),
-
-                PasswordTextField(
-                  controller: _confirmPasswordController,
-                  hintText: 'Confirm Password',
-                ),
-
-                // -- OTP fields (re-enable when Twilio is ready) --
-                // Container(toggle + phone/email input + Send OTP button)
-                // See _onSendOtp() above for the dispatch logic.
 
                 SizedBox(height: 32.h),
 
@@ -141,7 +170,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   builder: (context, state) {
                     final loading = state is AuthLoading;
                     return ElevatedButton(
-                      onPressed: loading ? null : _onSignUp,
+                      onPressed: loading ? null : _onSendOtp,
                       child: loading
                           ? SizedBox(
                               height: 20.r,
@@ -151,7 +180,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('Create Account'),
+                          : const Text('Send Verification Code'),
                     );
                   },
                 ),
@@ -169,6 +198,41 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   ],
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ToggleButton extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ToggleButton({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 10.h),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
             ),
           ),
         ),
