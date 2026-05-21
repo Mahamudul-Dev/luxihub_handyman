@@ -38,23 +38,26 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   }
 
   Future<void> _onRequestWithdrawal(WithdrawalRequested event, Emitter<WalletState> emit) async {
-    final currentState = state;
     final result = await requestWithdrawal(RequestWithdrawalParams(
       profileId: event.profileId,
       amount: event.amount,
       bankName: event.bankName,
       accountLast4: event.accountLast4,
     ));
-    result.fold(
-      (f) => emit(WalletError(f.message)),
-      (withdrawal) {
+    await result.fold(
+      (f) async => emit(WalletError(f.message)),
+      (withdrawal) async {
         emit(WithdrawalSuccess(withdrawal));
-        if (currentState is WalletLoaded) {
-          emit(WalletLoaded(
-            wallet: currentState.wallet,
-            withdrawals: [withdrawal, ...currentState.withdrawals],
-          ));
-        }
+        // Re-fetch so the balance reflects the DB-side deduction from the trigger.
+        final balanceResult = await getWalletBalance(ProfileIdParams(event.profileId));
+        final withdrawalsResult = await getWithdrawals(ProfileIdParams(event.profileId));
+        balanceResult.fold(
+          (f) => emit(WalletError(f.message)),
+          (wallet) => withdrawalsResult.fold(
+            (f) => emit(WalletError(f.message)),
+            (withdrawals) => emit(WalletLoaded(wallet: wallet, withdrawals: withdrawals)),
+          ),
+        );
       },
     );
   }

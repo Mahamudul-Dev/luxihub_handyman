@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:luxihub_handyman/core/di/service_locator.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
+import 'package:luxihub_handyman/core/utils/app_date_utils.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_event.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_state.dart';
@@ -53,6 +55,23 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _pickAndUploadAvatar() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 800,
+    );
+    if (picked == null || !mounted) return;
+
+    _profileBloc.add(ProfileAvatarUploadRequested(
+      userId: authState.user.id,
+      filePath: picked.path,
+    ));
+  }
+
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -91,12 +110,25 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _profileBloc,
-      child: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthUnauthenticated) {
-            context.go(AppRoutes.login.path);
-          }
-        },
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state is AuthUnauthenticated) {
+                context.go(AppRoutes.login.path);
+              }
+            },
+          ),
+          BlocListener<ProfileBloc, ProfileState>(
+            listener: (context, state) {
+              if (state is ProfileError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message)),
+                );
+              }
+            },
+          ),
+        ],
         child: Scaffold(
           backgroundColor: AppColors.surfaceBackground,
           appBar: AppBar(
@@ -142,16 +174,22 @@ class _ProfilePageState extends State<ProfilePage> {
                 );
               }
 
-              final profile = state is ProfileLoaded
-                  ? state.profile
-                  : (state is ProfileUpdating ? state.profile : null);
+              final profile = switch (state) {
+                ProfileLoaded s => s.profile,
+                ProfileUpdating s => s.profile,
+                ProfileUploadingAvatar s => s.profile,
+                _ => null,
+              };
+              final uploadingAvatar = state is ProfileUploadingAvatar;
 
               return _ProfileBody(
                 profile: profile,
+                uploadingAvatar: uploadingAvatar,
                 onLogout: () => _confirmLogout(context),
                 onEditProfile: profile == null
                     ? null
                     : () => _goToEditProfile(profile),
+                onPickAvatar: _pickAndUploadAvatar,
               );
             },
           ),
@@ -165,11 +203,15 @@ class _ProfileBody extends StatelessWidget {
   const _ProfileBody({
     required this.profile,
     required this.onLogout,
+    required this.onPickAvatar,
+    required this.uploadingAvatar,
     this.onEditProfile,
   });
 
   final Profile? profile;
   final VoidCallback onLogout;
+  final VoidCallback onPickAvatar;
+  final bool uploadingAvatar;
   final VoidCallback? onEditProfile;
 
   @override
@@ -195,28 +237,52 @@ class _ProfileBody extends StatelessWidget {
                     CircleAvatar(
                       radius: 46.r,
                       backgroundColor: AppColors.splashShapeColor,
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: AppTextStyles.displayLarge.copyWith(
-                          color: AppColors.primary,
-                          letterSpacing: 0,
+                      backgroundImage: profile?.avatarPath != null
+                          ? NetworkImage(profile!.avatarPath!)
+                          : null,
+                      child: profile?.avatarPath == null
+                          ? Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                              style: AppTextStyles.displayLarge.copyWith(
+                                color: AppColors.primary,
+                                letterSpacing: 0,
+                              ),
+                            )
+                          : null,
+                    ),
+                    if (uploadingAvatar)
+                      Positioned.fill(
+                        child: CircleAvatar(
+                          radius: 46.r,
+                          backgroundColor:
+                              Colors.black.withValues(alpha: 0.4),
+                          child: SizedBox(
+                            width: 24.r,
+                            height: 24.r,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
                     Positioned(
                       right: 0,
                       bottom: 0,
-                      child: Container(
-                        width: 28.r,
-                        height: 28.r,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: AppColors.surfaceBackground, width: 2),
+                      child: GestureDetector(
+                        onTap: uploadingAvatar ? null : onPickAvatar,
+                        child: Container(
+                          width: 28.r,
+                          height: 28.r,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: AppColors.surfaceBackground, width: 2),
+                          ),
+                          child: Icon(Icons.photo_library_outlined,
+                              size: 14.r, color: AppColors.textOnPrimary),
                         ),
-                        child: Icon(Icons.camera_alt_rounded,
-                            size: 14.r, color: AppColors.textOnPrimary),
                       ),
                     ),
                   ],
@@ -289,7 +355,7 @@ class _ProfileBody extends StatelessWidget {
                 ProfileInfoRow(
                   icon: Icons.cake_outlined,
                   label: 'Date of Birth',
-                  value: profile?.dob ?? '—',
+                  value: AppDateUtils.formatDob(profile?.dob),
                 ),
               ],
             ),

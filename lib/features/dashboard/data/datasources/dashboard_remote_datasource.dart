@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract class DashboardRemoteDataSource {
   Future<DashboardStatsModel> getDashboardStats(String providerId);
   Future<List<EarningModel>> getRecentEarnings(String providerId);
+  Future<List<EarningModel>> getAllEarnings(String providerId);
   Future<List<JobRequestModel>> getRecentJobRequests(String providerId);
   Stream<List<JobRequestModel>> watchNewJobRequests(String providerId);
 }
@@ -66,6 +67,32 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           .eq('status', 'completed')
           .order('completed_at', ascending: false)
           .limit(10);
+
+      return (res as List<dynamic>).map((json) {
+        final clientName =
+            (json['profiles'] as Map<String, dynamic>?)?['name'] as String? ?? '';
+        return EarningModel(
+          id: json['id'] as String,
+          clientName: clientName,
+          jobCategory: json['category'] as String? ?? '',
+          amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+          date: json['completed_at'] as String? ?? '',
+        );
+      }).toList();
+    } on PostgrestException catch (e) {
+      throw ServerException(e.message);
+    }
+  }
+
+  @override
+  Future<List<EarningModel>> getAllEarnings(String providerId) async {
+    try {
+      final res = await client
+          .from('job_requests')
+          .select('id, amount, category, completed_at, profiles!client_id(name)')
+          .eq('provider_id', providerId)
+          .eq('status', 'completed')
+          .order('completed_at', ascending: false);
 
       return (res as List<dynamic>).map((json) {
         final clientName =

@@ -22,11 +22,19 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
   @override
   Future<WalletModel> getWalletBalance(String profileId) async {
     try {
-      final walletData = await client
+      // Try to fetch existing row first; insert with 0.0 only if absent.
+      final existing = await client
           .from('wallet')
-          .upsert({'id': profileId, 'balance': 0.0}, onConflict: 'id')
           .select()
-          .single();
+          .eq('id', profileId)
+          .maybeSingle();
+
+      final walletData = existing ??
+          await client
+              .from('wallet')
+              .insert({'id': profileId, 'balance': 0.0})
+              .select()
+              .single();
       final profileData = await client
           .from('profiles')
           .select('stripe_account_id, stripe_payouts_enabled')

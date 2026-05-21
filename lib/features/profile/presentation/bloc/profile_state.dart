@@ -32,6 +32,14 @@ class ProfileUpdating extends ProfileState {
   List<Object> get props => [profile];
 }
 
+class ProfileUploadingAvatar extends ProfileState {
+  final Profile profile;
+  const ProfileUploadingAvatar(this.profile);
+
+  @override
+  List<Object> get props => [profile];
+}
+
 class ProfileError extends ProfileState {
   final String message;
   const ProfileError(this.message);

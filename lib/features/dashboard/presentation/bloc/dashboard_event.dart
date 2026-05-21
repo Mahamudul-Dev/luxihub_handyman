@@ -15,6 +15,14 @@ class DashboardFetchRequested extends DashboardEvent {
   List<Object> get props => [providerId];
 }
 
+class AllEarningsFetchRequested extends DashboardEvent {
+  final String providerId;
+  const AllEarningsFetchRequested(this.providerId);
+
+  @override
+  List<Object> get props => [providerId];
+}
+
 class DashboardJobRequestsWatchStarted extends DashboardEvent {
   final String providerId;
   const DashboardJobRequestsWatchStarted(this.providerId);

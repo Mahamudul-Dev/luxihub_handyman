@@ -16,6 +16,7 @@ import 'package:luxihub_handyman/features/authentication/presentation/pages/regi
 import 'package:luxihub_handyman/features/authentication/presentation/pages/registration_terms_page.dart';
 import 'package:luxihub_handyman/features/chat/presentation/pages/chat_page.dart';
 import 'package:luxihub_handyman/features/chat/presentation/pages/inbox_page.dart';
+import 'package:luxihub_handyman/features/dashboard/presentation/pages/all_earnings_page.dart';
 import 'package:luxihub_handyman/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_details_page.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_page.dart';
@@ -108,6 +109,7 @@ GoRouter createAppRouter(AuthBloc authBloc) {
             path: AppRoutes.withdrawals.path,
             builder: (context, state) => const WithdrawalsPage(),
           ),
+          
           GoRoute(
             name: AppRoutes.jobRequests.name,
             path: AppRoutes.jobRequests.path,
@@ -230,6 +232,12 @@ GoRouter createAppRouter(AuthBloc authBloc) {
           );
         },
       ),
+
+      GoRoute(
+            name: AppRoutes.allEarnings.name,
+            path: AppRoutes.allEarnings.path,
+            builder: (context, state) => const AllEarningsPage(),
+          ),
     ],
   );
 }

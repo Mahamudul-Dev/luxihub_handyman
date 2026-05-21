@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:luxihub_handyman/core/error/exceptions.dart';
 import 'package:luxihub_handyman/features/profile/data/models/profile_model.dart';
@@ -5,6 +7,7 @@ import 'package:luxihub_handyman/features/profile/data/models/profile_model.dart
 abstract class ProfileRemoteDatasource {
   Future<ProfileModel> getProfile(String userId);
   Future<ProfileModel> updateProfile(ProfileModel model);
+  Future<String> uploadAvatar(String userId, String filePath);
 }
 
 class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
@@ -58,6 +61,33 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
       }
 
       return ProfileModel.fromJson({...data, 'skills': model.skills});
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<String> uploadAvatar(String userId, String filePath) async {
+    try {
+      final ext = filePath.split('.').last.toLowerCase();
+      final storagePath = '$userId/avatar.$ext';
+
+      final bytes = await File(filePath).readAsBytes();
+      await client.storage.from('avatars').uploadBinary(
+            storagePath,
+            bytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      final publicUrl =
+          client.storage.from('avatars').getPublicUrl(storagePath);
+
+      await client
+          .from('profiles')
+          .update({'avatar_path': publicUrl})
+          .eq('id', userId);
+
+      return publicUrl;
     } catch (e) {
       throw ServerException(e.toString());
     }

@@ -21,6 +21,17 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<Either<Failure, String>> uploadAvatar(
+      String userId, String filePath) async {
+    try {
+      final url = await datasource.uploadAvatar(userId, filePath);
+      return Right(url);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+
+  @override
   Future<Either<Failure, Profile>> updateProfile(Profile profile) async {
     try {
       final model = ProfileModel(

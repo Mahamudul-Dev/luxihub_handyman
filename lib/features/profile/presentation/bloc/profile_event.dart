@@ -23,3 +23,13 @@ class ProfileUpdateRequested extends ProfileEvent {
   @override
   List<Object> get props => [profile];
 }
+
+class ProfileAvatarUploadRequested extends ProfileEvent {
+  final String userId;
+  final String filePath;
+  const ProfileAvatarUploadRequested(
+      {required this.userId, required this.filePath});
+
+  @override
+  List<Object> get props => [userId, filePath];
+}

@@ -21,6 +21,7 @@ import 'package:luxihub_handyman/features/profile/data/repositories/profile_repo
 import 'package:luxihub_handyman/features/profile/domain/repositories/profile_repository.dart';
 import 'package:luxihub_handyman/features/profile/domain/usecases/get_profile.dart';
 import 'package:luxihub_handyman/features/profile/domain/usecases/update_profile.dart';
+import 'package:luxihub_handyman/features/profile/domain/usecases/upload_avatar.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_bloc.dart';
 
 import 'package:luxihub_handyman/features/jobs/data/datasources/job_remote_datasource.dart';
@@ -52,6 +53,7 @@ import 'package:luxihub_handyman/features/chat/presentation/bloc/chat_bloc.dart'
 import 'package:luxihub_handyman/features/dashboard/data/datasources/dashboard_remote_datasource.dart';
 import 'package:luxihub_handyman/features/dashboard/data/repositories/dashboard_repository_impl.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/repositories/dashboard_repository.dart';
+import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_all_earnings.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_dashboard_stats.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_recent_earnings.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_recent_job_requests.dart';
@@ -98,9 +100,11 @@ Future<void> setupServiceLocator() async {
       () => ProfileRepositoryImpl(sl()));
   sl.registerLazySingleton(() => GetProfile(sl()));
   sl.registerLazySingleton(() => UpdateProfile(sl()));
+  sl.registerLazySingleton(() => UploadAvatar(sl()));
   sl.registerFactory(() => ProfileBloc(
         getProfile: sl(),
         updateProfile: sl(),
+        uploadAvatar: sl(),
       ));
 
   // ── Jobs ──────────────────────────────────────────────────────────────────
@@ -155,10 +159,12 @@ Future<void> setupServiceLocator() async {
       () => DashboardRepositoryImpl(sl()));
   sl.registerLazySingleton(() => GetDashboardStats(sl()));
   sl.registerLazySingleton(() => GetRecentEarnings(sl()));
+  sl.registerLazySingleton(() => GetAllEarnings(sl()));
   sl.registerLazySingleton(() => GetRecentJobRequests(sl()));
   sl.registerFactory(() => DashboardBloc(
         getDashboardStats: sl(),
         getRecentEarnings: sl(),
+        getAllEarnings: sl(),
         getRecentJobRequests: sl(),
         repository: sl(),
       ));

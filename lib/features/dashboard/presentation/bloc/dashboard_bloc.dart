@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/repositories/dashboard_repository.dart';
+import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_all_earnings.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_dashboard_stats.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_recent_earnings.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_recent_job_requests.dart';
@@ -9,17 +10,20 @@ import 'package:luxihub_handyman/features/dashboard/presentation/bloc/dashboard_
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   final GetDashboardStats getDashboardStats;
   final GetRecentEarnings getRecentEarnings;
+  final GetAllEarnings getAllEarnings;
   final GetRecentJobRequests getRecentJobRequests;
   final DashboardRepository _repository;
 
   DashboardBloc({
     required this.getDashboardStats,
     required this.getRecentEarnings,
+    required this.getAllEarnings,
     required this.getRecentJobRequests,
     required DashboardRepository repository,
   })  : _repository = repository,
         super(const DashboardInitial()) {
     on<DashboardFetchRequested>(_onFetch);
+    on<AllEarningsFetchRequested>(_onAllEarnings);
     on<DashboardJobRequestsWatchStarted>(_onWatchJobRequests);
   }
 
@@ -49,6 +53,18 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       recentEarnings: earningsResult.getOrElse(() => throw StateError('unreachable')),
       recentJobRequests: jobsResult.getOrElse(() => throw StateError('unreachable')),
     ));
+  }
+
+  Future<void> _onAllEarnings(
+    AllEarningsFetchRequested event,
+    Emitter<DashboardState> emit,
+  ) async {
+    emit(const DashboardLoading());
+    final result = await getAllEarnings(ProviderIdParams(event.providerId));
+    result.fold(
+      (f) => emit(DashboardError(f.message)),
+      (earnings) => emit(AllEarningsLoaded(earnings)),
+    );
   }
 
   Future<void> _onWatchJobRequests(

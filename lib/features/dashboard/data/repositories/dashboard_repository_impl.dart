@@ -32,6 +32,16 @@ class DashboardRepositoryImpl implements DashboardRepository {
   }
 
   @override
+  Future<Either<Failure, List<Earning>>> getAllEarnings(String providerId) async {
+    try {
+      final models = await remoteDataSource.getAllEarnings(providerId);
+      return Right(models.map((m) => m.toEntity()).toList());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<JobRequest>>> getRecentJobRequests(String providerId) async {
     try {
       final models = await remoteDataSource.getRecentJobRequests(providerId);

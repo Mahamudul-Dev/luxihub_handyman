@@ -65,6 +65,10 @@ class AppRoutes {
     name: 'JobRequestDetails',
     path: '/job-request/details',
   );
+  static const RouteModel allEarnings = RouteModel(
+    name: 'AllEarnings',
+    path: '/earnings',
+  );
 }
 
 class RouteModel {

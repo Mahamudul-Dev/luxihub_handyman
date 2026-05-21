@@ -41,6 +41,14 @@ class DashboardJobRequestsUpdated extends DashboardState {
   List<Object> get props => [jobRequests];
 }
 
+class AllEarningsLoaded extends DashboardState {
+  final List<Earning> earnings;
+  const AllEarningsLoaded(this.earnings);
+
+  @override
+  List<Object> get props => [earnings];
+}
+
 class DashboardError extends DashboardState {
   final String message;
   const DashboardError(this.message);

@@ -10,7 +10,12 @@
       "Bash(npx --version)",
       "Bash(flutter pub *)",
       "Bash(npx supabase *)",
-      "Bash(dart analyze *)"
+      "Bash(dart analyze *)",
+      "Bash(flutter --version)",
+      "Bash(cat \"E:\\\\Sdk\\\\flutter\\\\packages\\\\flutter_tools\\\\gradle\\\\flutter.gradle\" 2>/dev/null | grep -A2 \"minSdkVersion\" | head -10 || grep -r \"minSdkVersion\" \"E:\\\\Sdk\\\\flutter\\\\packages\\\\flutter_tools\\\\gradle\\\\\" 2>/dev/null | head -5)",
+      "Read(//e/Sdk/flutter/packages/flutter_tools/gradle/**)",
+      "Read(//e/Sdk/flutter/packages/flutter_tools/gradle\" 2>/dev/**)",
+      "Bash(supabase functions *)"
     ]
   },
   "mcpServers": {

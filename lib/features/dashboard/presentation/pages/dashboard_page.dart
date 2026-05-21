@@ -214,7 +214,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       Text('Recent Earnings',
                           style: AppTextStyles.titleLarge),
                       TextButton(
-                          onPressed: () {},
+                          onPressed: () =>
+                              context.push(AppRoutes.allEarnings.path),
                           child: const Text('See All')),
                     ],
                   ),
