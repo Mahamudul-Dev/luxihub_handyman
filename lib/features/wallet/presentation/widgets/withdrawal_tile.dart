@@ -87,7 +87,7 @@ class WithdrawalTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '- RM ${amount.toStringAsFixed(2)}',
+                '- £${amount.toStringAsFixed(2)}',
                 style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,

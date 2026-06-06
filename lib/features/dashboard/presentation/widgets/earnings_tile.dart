@@ -85,7 +85,7 @@ class EarningsTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '+€${amount.toStringAsFixed(2)}',
+                '+£${amount.toStringAsFixed(2)}',
                 style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.success,

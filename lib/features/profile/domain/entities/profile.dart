@@ -35,6 +35,40 @@ class Profile extends Equatable {
     this.skills = const [],
   });
 
+  Profile copyWith({
+    String? name,
+    String? phone,
+    String? email,
+    String? dob,
+    String? contractType,
+    double? hourlyRate,
+    String? serviceArea,
+    double? serviceLat,
+    double? serviceLng,
+    int? serviceRadiusKm,
+    String? avatarPath,
+    bool? isOnline,
+    bool? isKycVerified,
+    List<String>? skills,
+  }) =>
+      Profile(
+        id: id,
+        name: name ?? this.name,
+        phone: phone ?? this.phone,
+        email: email ?? this.email,
+        dob: dob ?? this.dob,
+        contractType: contractType ?? this.contractType,
+        hourlyRate: hourlyRate ?? this.hourlyRate,
+        serviceArea: serviceArea ?? this.serviceArea,
+        serviceLat: serviceLat ?? this.serviceLat,
+        serviceLng: serviceLng ?? this.serviceLng,
+        serviceRadiusKm: serviceRadiusKm ?? this.serviceRadiusKm,
+        avatarPath: avatarPath ?? this.avatarPath,
+        isOnline: isOnline ?? this.isOnline,
+        isKycVerified: isKycVerified ?? this.isKycVerified,
+        skills: skills ?? this.skills,
+      );
+
   @override
   List<Object?> get props => [id, name, phone, email];
 }

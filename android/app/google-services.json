@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "244453413198",
+    "project_id": "luxihub-uk",
+    "storage_bucket": "luxihub-uk.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:244453413198:android:960a7683e61f72498c0e1f",
+        "android_client_info": {
+          "package_name": "com.example.luxihub_handyman"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAD3Hq9b9sOieG3yQshHyCwSMHH-fZ7KJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:244453413198:android:4316205f57fd36578c0e1f",
+        "android_client_info": {
+          "package_name": "com.example.luxihub_user"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAD3Hq9b9sOieG3yQshHyCwSMHH-fZ7KJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

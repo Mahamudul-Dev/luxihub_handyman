@@ -84,7 +84,7 @@ class StatsCard extends StatelessWidget {
             child: Row(
               children: [
                 _StatItem(
-                  icon: Icons.euro_rounded,
+                  icon: Icons.currency_pound_rounded,
                   value: todayEarnings.toStringAsFixed(2),
                   label: 'Earned Today',
                 ),

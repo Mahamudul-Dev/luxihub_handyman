@@ -84,7 +84,7 @@ class WalletBalanceCard extends StatelessWidget {
 
           // ── Balance ───────────────────────────────────────────────────────
           Text(
-            '€ ${balance.toStringAsFixed(2)}',
+            '£${balance.toStringAsFixed(2)}',
             style: AppTextStyles.displayLarge.copyWith(
               color: AppColors.textOnPrimary,
               fontWeight: FontWeight.w700,

@@ -8,6 +8,7 @@ class JobRequestTile extends StatelessWidget {
     super.key,
     required this.clientName,
     required this.jobCategory,
+    this.status = 'pending',
     this.distanceKm,
     this.clientImageUrl,
     this.postedAgo = 'Just now',
@@ -19,6 +20,10 @@ class JobRequestTile extends StatelessWidget {
 
   final String clientName;
   final String jobCategory;
+
+  /// Job status: 'pending' | 'accepted' | 'rejected' | 'completed'
+  final String status;
+
   final double? distanceKm;
   final String? clientImageUrl;
   final String postedAgo;
@@ -35,6 +40,7 @@ class JobRequestTile extends StatelessWidget {
       case 'plumbing':
         return Icons.water_drop_outlined;
       case 'electrical':
+      case 'electrician':
         return Icons.electrical_services_outlined;
       case 'air conditioning':
       case 'hvac':
@@ -50,8 +56,43 @@ class JobRequestTile extends StatelessWidget {
     }
   }
 
+  ({Color color, Color bg, IconData icon, String label}) _statusStyle() {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return (
+          color: AppColors.success,
+          bg: AppColors.success,
+          icon: Icons.check_circle_outline_rounded,
+          label: 'Accepted',
+        );
+      case 'completed':
+        return (
+          color: AppColors.primary,
+          bg: AppColors.primary,
+          icon: Icons.task_alt_rounded,
+          label: 'Completed',
+        );
+      case 'rejected':
+        return (
+          color: AppColors.error,
+          bg: AppColors.error,
+          icon: Icons.cancel_outlined,
+          label: 'Rejected',
+        );
+      default:
+        return (
+          color: AppColors.textHint,
+          bg: AppColors.textHint,
+          icon: Icons.hourglass_empty_rounded,
+          label: status,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isPending = status.toLowerCase() == 'pending';
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.r),
@@ -147,10 +188,9 @@ class JobRequestTile extends StatelessWidget {
           const Divider(height: 1),
           SizedBox(height: 12.h),
 
-          // ── Action buttons ────────────────────────────────────────────
+          // ── Action row ────────────────────────────────────────────────
           Row(
             children: [
-              // Eye / details icon button
               if (showDetailsButton) ...[
                 SizedBox(
                   width: 44.r,
@@ -168,34 +208,66 @@ class JobRequestTile extends StatelessWidget {
                 ),
                 SizedBox(width: 8.w),
               ],
-
-              // Reject
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onReject,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: Size(0, 40.h),
-                    padding: EdgeInsets.zero,
-                    side: const BorderSide(color: AppColors.error),
-                    foregroundColor: AppColors.error,
+              if (isPending) ...[
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onReject,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: Size(0, 40.h),
+                      padding: EdgeInsets.zero,
+                      side: const BorderSide(color: AppColors.error),
+                      foregroundColor: AppColors.error,
+                    ),
+                    child: const Text('Reject'),
                   ),
-                  child: const Text('Reject'),
                 ),
-              ),
-              SizedBox(width: 8.w),
-
-              // Accept
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onAccept,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(0, 40.h),
-                    padding: EdgeInsets.zero,
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onAccept,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(0, 40.h),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: const Text('Accept'),
                   ),
-                  child: const Text('Accept'),
                 ),
-              ),
+              ] else
+                Expanded(child: _StatusBadge(style: _statusStyle())),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.style});
+
+  final ({Color color, Color bg, IconData icon, String label}) style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40.h,
+      decoration: BoxDecoration(
+        color: style.bg.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: style.color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(style.icon, size: 16.r, color: style.color),
+          SizedBox(width: 6.w),
+          Text(
+            style.label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: style.color,
+              fontWeight: FontWeight.w600,
+              fontSize: 13.sp,
+            ),
           ),
         ],
       ),

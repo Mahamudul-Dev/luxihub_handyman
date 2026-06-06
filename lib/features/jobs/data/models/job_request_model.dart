@@ -11,6 +11,7 @@ class JobRequestModel {
   final double clientLat;
   final double clientLng;
   final String postedAt;
+  final String? completedAt;
   final List<String> attachmentPaths;
 
   const JobRequestModel({
@@ -24,6 +25,7 @@ class JobRequestModel {
     required this.clientLat,
     required this.clientLng,
     required this.postedAt,
+    this.completedAt,
     this.attachmentPaths = const [],
   });
 
@@ -38,6 +40,7 @@ class JobRequestModel {
         clientLat: (json['client_lat'] as num).toDouble(),
         clientLng: (json['client_lng'] as num).toDouble(),
         postedAt: json['posted_at'] as String,
+        completedAt: json['completed_at'] as String?,
         attachmentPaths: (json['job_attachments'] as List<dynamic>?)
                 ?.map((e) => e['storage_path'] as String)
                 .toList() ??
@@ -55,6 +58,7 @@ class JobRequestModel {
         clientLat: clientLat,
         clientLng: clientLng,
         postedAt: postedAt,
+        completedAt: completedAt,
         attachmentPaths: attachmentPaths,
       );
 }

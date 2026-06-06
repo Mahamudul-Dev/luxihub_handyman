@@ -6,9 +6,10 @@ import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
   const DashboardAppBar({
     super.key,
-    this.name = 'Ahmad Rizwan',
-    this.serviceArea = 'Kuala Lumpur',
-    this.notificationCount = 3,
+    required this.name,
+    required this.serviceArea,
+    this.isOnline = true,
+    this.notificationCount = 0,
     this.onNotificationTap,
     this.onOnlineToggle,
     this.profileImageUrl,
@@ -16,6 +17,7 @@ class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   final String name;
   final String serviceArea;
+  final bool isOnline;
   final int notificationCount;
   final VoidCallback? onNotificationTap;
   final ValueChanged<bool>? onOnlineToggle;
@@ -29,7 +31,21 @@ class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _DashboardAppBarState extends State<DashboardAppBar> {
-  bool _isOnline = true;
+  late bool _isOnline;
+
+  @override
+  void initState() {
+    super.initState();
+    _isOnline = widget.isOnline;
+  }
+
+  @override
+  void didUpdateWidget(DashboardAppBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isOnline != widget.isOnline) {
+      _isOnline = widget.isOnline;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,11 +79,13 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
             children: [
               Icon(Icons.location_on_rounded, size: 12.r, color: AppColors.textHint),
               SizedBox(width: 2.w),
-              Text(
-                widget.serviceArea,
-                style: AppTextStyles.bodySmall.copyWith(
-                  fontSize: 11.sp,
-                  color: AppColors.textHint,
+              Expanded(
+                child: Text(
+                  widget.serviceArea,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontSize: 11.sp,
+                    color: AppColors.textHint,
+                  ),
                 ),
               ),
             ],

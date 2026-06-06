@@ -4,9 +4,9 @@ import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 
 class JobAttachmentsGrid extends StatelessWidget {
-  const JobAttachmentsGrid({super.key, required this.count});
+  const JobAttachmentsGrid({super.key, required this.paths});
 
-  final int count;
+  final List<String> paths;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class JobAttachmentsGrid extends StatelessWidget {
                 borderRadius: BorderRadius.circular(50.r),
               ),
               child: Text(
-                '$count',
+                '${paths.length}',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -34,63 +34,64 @@ class JobAttachmentsGrid extends StatelessWidget {
           ],
         ),
         SizedBox(height: 12.h),
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 8.r,
-          mainAxisSpacing: 8.r,
-          children: List.generate(count, (index) {
-            final isLast = index == count - 1;
-            return Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBackground,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.divider),
-              ),
-              child: isLast
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.image_rounded,
-                          size: 28.r,
-                          color: AppColors.textHint,
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          'Photo ${index + 1}',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            fontSize: 10.sp,
-                            color: AppColors.textHint,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12.r),
-                          child: Container(
-                            color: [
-                              AppColors.splashBackground,
-                              AppColors.surfaceBackground,
-                              AppColors.splashShapeColor,
-                              AppColors.inputFill,
-                            ][index % 4],
-                            child: Icon(
-                              Icons.image_rounded,
-                              size: 36.r,
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        ),
-                      ],
+        if (paths.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 20.h),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceBackground,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.image_not_supported_outlined,
+                    size: 32.r, color: AppColors.textHint),
+                SizedBox(height: 8.h),
+                Text('No attachments',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textHint)),
+              ],
+            ),
+          )
+        else
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8.r,
+              mainAxisSpacing: 8.r,
+            ),
+            itemCount: paths.length,
+            itemBuilder: (context, index) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceBackground,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.image_rounded,
+                      size: 28.r,
+                      color: AppColors.primary.withValues(alpha: 0.4),
                     ),
-            );
-          }),
-        ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Photo ${index + 1}',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontSize: 10.sp,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
       ],
     );
   }

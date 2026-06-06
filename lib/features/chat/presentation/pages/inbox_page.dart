@@ -257,49 +257,76 @@ class _InboxPageState extends State<InboxPage> {
                         ),
                       ),
                       Expanded(
-                        child: items.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
+                        child: RefreshIndicator(
+                          onRefresh: () async {
+                            final authState =
+                                context.read<AuthBloc>().state;
+                            if (authState is AuthAuthenticated) {
+                              _chatBloc.add(ConversationsFetchRequested(
+                                  authState.user.id));
+                            }
+                          },
+                          color: AppColors.primary,
+                          child: items.isEmpty
+                              ? ListView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
                                   children: [
-                                    Icon(
-                                      Icons.chat_bubble_outline_rounded,
-                                      size: 48.r,
-                                      color: AppColors.textHint,
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    Text(
-                                      'No messages found',
-                                      style: AppTextStyles.bodyMedium
-                                          .copyWith(color: AppColors.textHint),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : ListView.builder(
-                                padding: EdgeInsets.fromLTRB(
-                                    16.w, 4.h, 16.w, 32.h),
-                                itemCount: items.length,
-                                itemBuilder: (context, index) {
-                                  final c = items[index];
-                                  return InboxChatTile(
-                                    clientName: c.clientName ?? 'Unknown',
-                                    lastMessage:
-                                        c.lastMessage ?? 'No messages yet',
-                                    time: _relativeTime(c.lastMessageAt),
-                                    unreadCount: c.unreadCount,
-                                    jobCategory: c.jobCategory ?? '',
-                                    onTap: () => context.push(
-                                      AppRoutes.chat.path,
-                                      extra: (
-                                        clientName: c.clientName ?? 'Unknown',
-                                        jobCategory: c.jobCategory ?? '',
-                                        conversationId: c.id,
+                                    SizedBox(
+                                      height: 300.h,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons
+                                                  .chat_bubble_outline_rounded,
+                                              size: 48.r,
+                                              color: AppColors.textHint,
+                                            ),
+                                            SizedBox(height: 12.h),
+                                            Text(
+                                              'No messages found',
+                                              style: AppTextStyles.bodyMedium
+                                                  .copyWith(
+                                                      color:
+                                                          AppColors.textHint),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
+                                  ],
+                                )
+                              : ListView.builder(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: EdgeInsets.fromLTRB(
+                                      16.w, 4.h, 16.w, 32.h),
+                                  itemCount: items.length,
+                                  itemBuilder: (context, index) {
+                                    final c = items[index];
+                                    return InboxChatTile(
+                                      clientName:
+                                          c.clientName ?? 'Unknown',
+                                      lastMessage:
+                                          c.lastMessage ?? 'No messages yet',
+                                      time: _relativeTime(c.lastMessageAt),
+                                      unreadCount: c.unreadCount,
+                                      jobCategory: c.jobCategory ?? '',
+                                      onTap: () => context.push(
+                                        AppRoutes.chat.path,
+                                        extra: (
+                                          clientName:
+                                              c.clientName ?? 'Unknown',
+                                          jobCategory: c.jobCategory ?? '',
+                                          conversationId: c.id,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
                       ),
                     ],
                   );

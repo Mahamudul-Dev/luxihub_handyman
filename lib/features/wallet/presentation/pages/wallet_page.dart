@@ -142,11 +142,19 @@ class _WalletPageState extends State<WalletPage> {
             final recentWithdrawals = loaded?.withdrawals.take(4).toList() ?? [];
             final stripeReady = loaded?.wallet.stripePayoutsEnabled ?? false;
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+            return RefreshIndicator(
+              onRefresh: () async {
+                if (_profileId != null) {
+                  _walletBloc.add(WalletFetchRequested(_profileId!));
+                }
+              },
+              color: AppColors.primary,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   WalletBalanceCard(
                     balance: loaded?.wallet.balance ?? 0.0,
                     onWithdraw: () {
@@ -212,6 +220,7 @@ class _WalletPageState extends State<WalletPage> {
                       ),
                     ),
                 ],
+              ),
               ),
             );
           },
@@ -400,7 +409,7 @@ class _WithdrawalSheetState extends State<_WithdrawalSheet> {
                   style: AppTextStyles.titleLarge.copyWith(fontSize: 17.sp)),
               SizedBox(height: 4.h),
               Text(
-                'Available: RM ${widget.balance.toStringAsFixed(2)}',
+                'Available: £${widget.balance.toStringAsFixed(2)}',
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textHint),
               ),
@@ -416,7 +425,7 @@ class _WithdrawalSheetState extends State<_WithdrawalSheet> {
                 decoration: const InputDecoration(
                   hintText: '0.00',
                   prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                  prefixText: 'RM  ',
+                  prefixText: '£ ',
                 ),
                 validator: (v) {
                   final amount = double.tryParse(v ?? '');
@@ -424,7 +433,7 @@ class _WithdrawalSheetState extends State<_WithdrawalSheet> {
                     return 'Enter a valid amount';
                   }
                   if (amount > widget.balance) {
-                    return 'Exceeds available balance (RM ${widget.balance.toStringAsFixed(2)})';
+                    return 'Exceeds available balance (£${widget.balance.toStringAsFixed(2)})';
                   }
                   return null;
                 },

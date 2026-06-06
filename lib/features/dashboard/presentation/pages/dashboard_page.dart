@@ -18,6 +18,7 @@ import 'package:luxihub_handyman/features/dashboard/presentation/widgets/stats_c
 import 'package:luxihub_handyman/features/jobs/presentation/bloc/job_bloc.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/bloc/job_event.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/bloc/job_state.dart';
+import 'package:luxihub_handyman/features/profile/domain/entities/profile.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_event.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_state.dart';
@@ -122,11 +123,15 @@ class _DashboardPageState extends State<DashboardPage> {
             final loaded =
                 dashState is DashboardLoaded ? dashState : null;
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 32.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            return RefreshIndicator(
+              onRefresh: () async => _fetch(),
+              color: AppColors.primary,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 32.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   // ── Stats card ─────────────────────────────────────
                   StatsCard(
                     todayEarnings:
@@ -191,6 +196,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       job.clientName ?? 'Unknown',
                                   jobCategory: job.category,
                                   postedAgo: _relativeTime(job.postedAt),
+                                  status: job.status,
                                   onAccept: () => context
                                       .read<JobBloc>()
                                       .add(JobRequestAccepted(job.id)),
@@ -198,7 +204,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                       .read<JobBloc>()
                                       .add(JobRequestRejected(job.id)),
                                   onDetails: () => context.push(
-                                      AppRoutes.jobRequestDetails.path),
+                                      AppRoutes.jobRequestDetails.path,
+                                      extra: job),
                                 ))
                             .toList(),
                       );
@@ -241,6 +248,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                 ],
               ),
+              ),
             );
           },
         ),
@@ -256,19 +264,31 @@ class _DashboardAppBarWrapper extends StatelessWidget
   final VoidCallback onJobActionComplete;
 
   @override
-  Size get preferredSize =>
-      Size.fromHeight(kToolbarHeight + 8);
+  Size get preferredSize => Size.fromHeight(kToolbarHeight + 8.h);
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
-        final profile =
-            state is ProfileLoaded ? state.profile : null;
+        final profile = switch (state) {
+          ProfileLoaded s => s.profile,
+          ProfileUpdating s => s.profile,
+          ProfileUploadingAvatar s => s.profile,
+          _ => null,
+        };
         return DashboardAppBar(
           name: profile?.name ?? '',
           serviceArea: profile?.serviceArea ?? '',
           notificationCount: 0,
+          isOnline: profile?.isOnline ?? true,
+          profileImageUrl: profile?.avatarPath,
+          onOnlineToggle: profile == null
+              ? null
+              : (value) => context.read<ProfileBloc>().add(
+                    ProfileUpdateRequested(
+                      profile.copyWith(isOnline: value),
+                    ),
+                  ),
         );
       },
     );

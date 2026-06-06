@@ -15,7 +15,9 @@
       "Bash(cat \"E:\\\\Sdk\\\\flutter\\\\packages\\\\flutter_tools\\\\gradle\\\\flutter.gradle\" 2>/dev/null | grep -A2 \"minSdkVersion\" | head -10 || grep -r \"minSdkVersion\" \"E:\\\\Sdk\\\\flutter\\\\packages\\\\flutter_tools\\\\gradle\\\\\" 2>/dev/null | head -5)",
       "Read(//e/Sdk/flutter/packages/flutter_tools/gradle/**)",
       "Read(//e/Sdk/flutter/packages/flutter_tools/gradle\" 2>/dev/**)",
-      "Bash(supabase functions *)"
+      "Bash(supabase functions *)",
+      "Bash(dir \"e:\\\\Projects\\\\flutter-projects\\\\luxihub_handyman\\\\android\")",
+      "Bash(Remove-Item -Recurse -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub_handyman\\\\supabase\\\\functions\\\\send-push-notification\")"
     ]
   },
   "mcpServers": {

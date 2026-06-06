@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:luxihub_handyman/core/di/service_locator.dart';
-import 'package:luxihub_handyman/core/dummy/dummy.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
@@ -33,7 +32,15 @@ class JobRequestPage extends StatefulWidget {
 }
 
 class _JobRequestPageState extends State<JobRequestPage> {
-  static const _categories = Dummy.jobCategories;
+  static const _categories = [
+    'All',
+    'Plumbing',
+    'Electrical',
+    'Air Conditioning',
+    'Cleaning',
+    'Carpentry',
+    'Painting',
+  ];
 
   late final JobBloc _jobBloc;
   String _selectedCategory = 'All';
@@ -239,42 +246,67 @@ class _JobRequestPageState extends State<JobRequestPage> {
                         ),
                       ),
                       Expanded(
-                        child: items.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
+                        child: RefreshIndicator(
+                          onRefresh: () async => _fetchJobs(),
+                          color: AppColors.primary,
+                          child: items.isEmpty
+                              ? ListView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
                                   children: [
-                                    Icon(Icons.work_off_outlined,
-                                        size: 48.r,
-                                        color: AppColors.textHint),
-                                    SizedBox(height: 12.h),
-                                    Text(
-                                      'No job requests found',
-                                      style: AppTextStyles.bodyMedium
-                                          .copyWith(color: AppColors.textHint),
+                                    SizedBox(
+                                      height: 300.h,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.work_off_outlined,
+                                                size: 48.r,
+                                                color: AppColors.textHint),
+                                            SizedBox(height: 12.h),
+                                            Text(
+                                              'No job requests found',
+                                              style: AppTextStyles.bodyMedium
+                                                  .copyWith(
+                                                      color:
+                                                          AppColors.textHint),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ],
+                                )
+                              : ListView.builder(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: EdgeInsets.fromLTRB(
+                                      16.w, 4.h, 16.w, 32.h),
+                                  itemCount: items.length,
+                                  itemBuilder: (context, index) {
+                                    final job = items[index];
+                                    return JobRequestTile(
+                                      clientName:
+                                          job.clientName ?? 'Unknown',
+                                      jobCategory: job.category,
+                                      postedAgo: _relativeTime(job.postedAt),
+                                      status: job.status,
+                                      onAccept: () => _jobBloc
+                                          .add(JobRequestAccepted(job.id)),
+                                      onReject: () => _jobBloc
+                                          .add(JobRequestRejected(job.id)),
+                                      onDetails: () async {
+                                        final refresh = await context
+                                            .push<bool>(
+                                                AppRoutes
+                                                    .jobRequestDetails.path,
+                                                extra: job);
+                                        if (refresh == true) _fetchJobs();
+                                      },
+                                    );
+                                  },
                                 ),
-                              )
-                            : ListView.builder(
-                                padding: EdgeInsets.fromLTRB(
-                                    16.w, 4.h, 16.w, 32.h),
-                                itemCount: items.length,
-                                itemBuilder: (context, index) {
-                                  final job = items[index];
-                                  return JobRequestTile(
-                                    clientName: job.clientName ?? 'Unknown',
-                                    jobCategory: job.category,
-                                    postedAgo: _relativeTime(job.postedAt),
-                                    onAccept: () => _jobBloc
-                                        .add(JobRequestAccepted(job.id)),
-                                    onReject: () => _jobBloc
-                                        .add(JobRequestRejected(job.id)),
-                                    onDetails: () => context.push(
-                                        AppRoutes.jobRequestDetails.path),
-                                  );
-                                },
-                              ),
+                        ),
                       ),
                     ],
                   );

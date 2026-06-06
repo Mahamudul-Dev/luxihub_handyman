@@ -11,6 +11,7 @@ class JobRequest extends Equatable {
   final double clientLat;
   final double clientLng;
   final String postedAt;
+  final String? completedAt;
   final List<String> attachmentPaths;
 
   const JobRequest({
@@ -24,6 +25,7 @@ class JobRequest extends Equatable {
     required this.clientLat,
     required this.clientLng,
     required this.postedAt,
+    this.completedAt,
     this.attachmentPaths = const [],
   });
 

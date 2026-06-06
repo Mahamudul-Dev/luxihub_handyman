@@ -210,17 +210,7 @@ class _ChatPageState extends State<ChatPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  SizedBox(
-                    width: 40.r,
-                    height: 40.r,
-                    child: IconButton(
-                      onPressed: () {},
-                      padding: EdgeInsets.zero,
-                      icon: Icon(Icons.attach_file_rounded,
-                          size: 22.r, color: AppColors.textHint),
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
+                  
                   Expanded(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxHeight: 120.h),

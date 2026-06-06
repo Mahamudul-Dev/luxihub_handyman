@@ -69,6 +69,10 @@ class AppRoutes {
     name: 'AllEarnings',
     path: '/earnings',
   );
+  static const RouteModel allReviews = RouteModel(
+    name: 'AllReviews',
+    path: '/profile/reviews',
+  );
 }
 
 class RouteModel {

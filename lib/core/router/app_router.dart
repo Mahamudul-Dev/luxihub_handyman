@@ -17,7 +17,9 @@ import 'package:luxihub_handyman/features/authentication/presentation/pages/regi
 import 'package:luxihub_handyman/features/chat/presentation/pages/chat_page.dart';
 import 'package:luxihub_handyman/features/chat/presentation/pages/inbox_page.dart';
 import 'package:luxihub_handyman/features/dashboard/presentation/pages/all_earnings_page.dart';
+import 'package:luxihub_handyman/features/profile/presentation/pages/all_reviews_page.dart';
 import 'package:luxihub_handyman/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:luxihub_handyman/features/jobs/domain/entities/job_request.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_details_page.dart';
 import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_page.dart';
 import 'package:luxihub_handyman/features/profile/domain/entities/profile.dart';
@@ -206,7 +208,11 @@ GoRouter createAppRouter(AuthBloc authBloc) {
       GoRoute(
         name: AppRoutes.jobRequestDetails.name,
         path: AppRoutes.jobRequestDetails.path,
-        builder: (context, state) => const JobRequestDetailsPage(),
+        builder: (context, state) {
+          final job = state.extra as JobRequest?;
+          if (job == null) return const Scaffold(body: SizedBox.shrink());
+          return JobRequestDetailsPage(job: job);
+        },
       ),
       GoRoute(
         name: AppRoutes.chat.name,
@@ -234,10 +240,15 @@ GoRouter createAppRouter(AuthBloc authBloc) {
       ),
 
       GoRoute(
-            name: AppRoutes.allEarnings.name,
-            path: AppRoutes.allEarnings.path,
-            builder: (context, state) => const AllEarningsPage(),
-          ),
+        name: AppRoutes.allEarnings.name,
+        path: AppRoutes.allEarnings.path,
+        builder: (context, state) => const AllEarningsPage(),
+      ),
+      GoRoute(
+        name: AppRoutes.allReviews.name,
+        path: AppRoutes.allReviews.path,
+        builder: (context, state) => const AllReviewsPage(),
+      ),
     ],
   );
 }
