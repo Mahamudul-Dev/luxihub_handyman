@@ -19,7 +19,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const payload = await req.json();
+    const rawBody = await req.text();
+    if (!rawBody) {
+      return new Response(JSON.stringify({ error: "Empty request body" }), {
+        status: 400, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    const payload = JSON.parse(rawBody);
     const record = payload.record as {
       id: string;
       title: string;

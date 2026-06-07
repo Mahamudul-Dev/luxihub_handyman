@@ -53,7 +53,8 @@ class _WalletPageState extends State<WalletPage> {
     super.dispose();
   }
 
-  void _showWithdrawalSheet(double balance, String? stripeAccountId) {
+  void _showWithdrawalSheet(
+      double balance, String? stripeAccountId, double feePercent) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -61,13 +62,17 @@ class _WalletPageState extends State<WalletPage> {
       builder: (_) => _WithdrawalSheet(
         balance: balance,
         stripeAccountId: stripeAccountId,
-        onSubmit: (amount, bankName, accountLast4) {
+        platformFeePercent: feePercent,
+        onSubmit: (amount, bankName, accountLast4, feeAmount, netAmount) {
           if (_profileId == null) return;
           _walletBloc.add(WithdrawalRequested(
             profileId: _profileId!,
             amount: amount,
             bankName: bankName,
             accountLast4: accountLast4,
+            platformFeePercent: feePercent,
+            feeAmount: feeAmount,
+            netAmount: netAmount,
           ));
         },
       ),
@@ -157,6 +162,7 @@ class _WalletPageState extends State<WalletPage> {
                   children: [
                   WalletBalanceCard(
                     balance: loaded?.wallet.balance ?? 0.0,
+                    platformFeePercent: loaded?.wallet.platformFeePercent ?? 10.0,
                     onWithdraw: () {
                       if (!stripeReady) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -169,6 +175,7 @@ class _WalletPageState extends State<WalletPage> {
                       _showWithdrawalSheet(
                         loaded?.wallet.balance ?? 0.0,
                         loaded?.wallet.stripeAccountId,
+                        loaded?.wallet.platformFeePercent ?? 10.0,
                       );
                     },
                   ),
@@ -301,13 +308,20 @@ class _WithdrawalSheet extends StatefulWidget {
   const _WithdrawalSheet({
     required this.balance,
     required this.onSubmit,
+    required this.platformFeePercent,
     this.stripeAccountId,
   });
 
   final double balance;
   final String? stripeAccountId;
-  final void Function(double amount, String bankName, String accountLast4)
-      onSubmit;
+  final double platformFeePercent;
+  final void Function(
+    double amount,
+    String bankName,
+    String accountLast4,
+    double feeAmount,
+    double netAmount,
+  ) onSubmit;
 
   @override
   State<_WithdrawalSheet> createState() => _WithdrawalSheetState();
@@ -364,12 +378,12 @@ class _WithdrawalSheetState extends State<_WithdrawalSheet> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    final gross = double.parse(_amountController.text.trim());
+    final fee = double.parse(
+        (gross * widget.platformFeePercent / 100).toStringAsFixed(2));
+    final net = double.parse((gross - fee).toStringAsFixed(2));
     Navigator.of(context).pop();
-    widget.onSubmit(
-      double.parse(_amountController.text.trim()),
-      _bankName ?? '',
-      _accountLast4 ?? '',
-    );
+    widget.onSubmit(gross, _bankName ?? '', _accountLast4 ?? '', fee, net);
   }
 
   @override
@@ -422,6 +436,7 @@ class _WithdrawalSheetState extends State<_WithdrawalSheet> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 style: AppTextStyles.inputText,
+                onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
                   hintText: '0.00',
                   prefixIcon: Icon(Icons.account_balance_wallet_outlined),
@@ -438,6 +453,47 @@ class _WithdrawalSheetState extends State<_WithdrawalSheet> {
                   return null;
                 },
               ),
+
+              // ── Live fee breakdown ────────────────────────────────────
+              Builder(builder: (_) {
+                final gross =
+                    double.tryParse(_amountController.text.trim());
+                if (gross == null || gross <= 0) return const SizedBox.shrink();
+                final fee = gross * widget.platformFeePercent / 100;
+                final net = gross - fee;
+                return Container(
+                  margin: EdgeInsets.only(top: 12.h),
+                  padding: EdgeInsets.all(14.r),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBackground,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Column(
+                    children: [
+                      _FeeRow(
+                        label: 'Gross amount',
+                        value: '£${gross.toStringAsFixed(2)}',
+                      ),
+                      Divider(height: 16.h, color: AppColors.divider),
+                      _FeeRow(
+                        label:
+                            'Platform fee (${widget.platformFeePercent.toStringAsFixed(0)}%)',
+                        value: '− £${fee.toStringAsFixed(2)}',
+                        valueColor: AppColors.error,
+                      ),
+                      SizedBox(height: 10.h),
+                      _FeeRow(
+                        label: 'You receive',
+                        value: '£${net.toStringAsFixed(2)}',
+                        bold: true,
+                        valueColor: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                );
+              }),
+
               SizedBox(height: 20.h),
 
               // ── Bank details (read-only from Stripe) ──────────────────
@@ -549,6 +605,43 @@ class _ReadOnlyBankRow extends StatelessWidget {
               fontSize: 10.sp,
               color: AppColors.textHint,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeeRow extends StatelessWidget {
+  const _FeeRow({
+    required this.label,
+    required this.value,
+    this.bold = false,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final bool bold;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: bold ? AppColors.textPrimary : AppColors.textHint,
+            fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: valueColor ?? AppColors.textPrimary,
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ],

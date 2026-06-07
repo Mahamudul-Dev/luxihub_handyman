@@ -79,22 +79,30 @@ Deno.serve(async (req) => {
       return json({ error: 'Provider has no connected Stripe account' }, 400);
     }
 
-    const amountCents = Math.round(withdrawal.amount * 100);
+    // Use net_amount (after platform fee) if available; fall back to gross amount
+    // for legacy rows created before fee columns existed.
+    const payoutAmount: number = withdrawal.net_amount > 0
+      ? withdrawal.net_amount
+      : withdrawal.amount;
+    const amountCents = Math.round(payoutAmount * 100);
     const currency: string = withdrawal.currency ?? 'gbp';
 
     // ── 8. Create the Stripe transfer (platform → connected account) ───────
     let transfer: Stripe.Transfer;
     try {
       transfer = await stripe.transfers.create({
-        amount: amountCents,
+        amount: amountCents,           // net amount — platform fee already deducted
         currency,
         destination: stripeAccountId,
         transfer_group: `withdrawal_${withdrawal_id}`,
-        description: `Withdrawal for ${profile?.name ?? user.id}`,
+        description: `Withdrawal for ${profile?.name ?? user.id} (gross £${withdrawal.amount}, fee £${withdrawal.fee_amount ?? 0})`,
         metadata: {
           withdrawal_id,
           provider_id: user.id,
           provider_stripe_account: stripeAccountId,
+          gross_amount: String(withdrawal.amount),
+          fee_amount: String(withdrawal.fee_amount ?? 0),
+          net_amount: String(payoutAmount),
         },
       });
     } catch (stripeErr) {

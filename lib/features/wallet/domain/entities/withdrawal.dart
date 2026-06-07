@@ -8,6 +8,9 @@ class Withdrawal extends Equatable {
   final String accountLast4;
   final String status;
   final String createdAt;
+  final double platformFeePercent;
+  final double feeAmount;
+  final double netAmount;
 
   const Withdrawal({
     required this.id,
@@ -17,6 +20,9 @@ class Withdrawal extends Equatable {
     required this.accountLast4,
     required this.status,
     required this.createdAt,
+    this.platformFeePercent = 0,
+    this.feeAmount = 0,
+    this.netAmount = 0,
   });
 
   @override

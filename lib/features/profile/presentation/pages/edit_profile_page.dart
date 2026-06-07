@@ -13,7 +13,6 @@ import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 import 'package:luxihub_handyman/core/utils/app_date_utils.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/contract_type_selector.dart';
-import 'package:luxihub_handyman/features/authentication/presentation/widgets/skill_chip_input.dart';
 import 'package:luxihub_handyman/features/profile/domain/entities/profile.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_event.dart';
@@ -41,6 +40,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   DateTime? _selectedDob;
   double _radiusKm = 5;
   List<String> _skills = [];
+  List<_Category> _categories = [];
+  bool _loadingCategories = true;
   late LatLng _center;
   String? _serviceAreaText;
   String? _currentPhone;
@@ -72,6 +73,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _currentPhone = widget.profile.phone;
     _currentEmail = widget.profile.email;
     _skills = List.from(widget.profile.skills);
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final data = await sl<SupabaseClient>()
+          .from('categories')
+          .select('id, name, image_url')
+          .eq('is_active', true)
+          .order('sort_order');
+      if (mounted) {
+        setState(() {
+          _categories = (data as List)
+              .map((e) => _Category(
+                    id: e['id'] as String,
+                    name: e['name'] as String,
+                    imageUrl: e['image_url'] as String? ?? '',
+                  ))
+              .toList();
+          _loadingCategories = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingCategories = false);
+    }
+  }
+
+  void _toggleCategory(String name) {
+    setState(() {
+      if (_skills.contains(name)) {
+        _skills.remove(name);
+      } else {
+        _skills.add(name);
+      }
+    });
   }
 
   @override
@@ -351,11 +387,83 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         SizedBox(height: 20.h),
 
-                        SkillChipInput(
-                          initialSkills: _skills,
-                          onChanged: (updated) =>
-                              _skills = List.from(updated),
+                        _FieldLabel(label: 'Area of Skills'),
+                        SizedBox(height: 4.h),
+                        Text(
+                          'Select all that apply',
+                          style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textHint, fontSize: 11.sp),
                         ),
+                        SizedBox(height: 12.h),
+                        if (_loadingCategories)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_categories.isEmpty)
+                          Text(
+                            'No categories available.',
+                            style: AppTextStyles.bodySmall
+                                .copyWith(color: AppColors.textHint),
+                          )
+                        else
+                          Wrap(
+                            spacing: 10.w,
+                            runSpacing: 10.h,
+                            children: _categories.map((cat) {
+                              final selected = _skills.contains(cat.name);
+                              return GestureDetector(
+                                onTap: () => _toggleCategory(cat.name),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 14.w, vertical: 10.h),
+                                  decoration: BoxDecoration(
+                                    color: selected
+                                        ? AppColors.primary
+                                        : AppColors.background,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(
+                                      color: selected
+                                          ? AppColors.primary
+                                          : AppColors.inputBorder,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (cat.imageUrl.isNotEmpty)
+                                        Image.network(
+                                          cat.imageUrl,
+                                          width: 20.r,
+                                          height: 20.r,
+                                          color: selected
+                                              ? AppColors.textOnPrimary
+                                              : null,
+                                          colorBlendMode: selected
+                                              ? BlendMode.srcIn
+                                              : null,
+                                          errorBuilder: (_, _, _) =>
+                                              Icon(Icons.build_outlined,
+                                                  size: 18.r,
+                                                  color: selected
+                                                      ? AppColors.textOnPrimary
+                                                      : AppColors.textSecondary),
+                                        ),
+                                      SizedBox(width: 6.w),
+                                      Text(
+                                        cat.name,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: selected
+                                              ? AppColors.textOnPrimary
+                                              : AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                       ],
                     ),
                   ),
@@ -924,6 +1032,13 @@ class _ChangeCredentialSheetState extends State<_ChangeCredentialSheet> {
       ),
     );
   }
+}
+
+class _Category {
+  final String id;
+  final String name;
+  final String imageUrl;
+  const _Category({required this.id, required this.name, required this.imageUrl});
 }
 
 class _ReadOnlyInfoRow extends StatelessWidget {

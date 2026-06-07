@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:luxihub_handyman/core/di/service_locator.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_state.dart';
@@ -17,6 +19,8 @@ import 'package:luxihub_handyman/features/authentication/presentation/pages/regi
 import 'package:luxihub_handyman/features/chat/presentation/pages/chat_page.dart';
 import 'package:luxihub_handyman/features/chat/presentation/pages/inbox_page.dart';
 import 'package:luxihub_handyman/features/dashboard/presentation/pages/all_earnings_page.dart';
+import 'package:luxihub_handyman/features/notifications/presentation/cubit/notifications_cubit.dart';
+import 'package:luxihub_handyman/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:luxihub_handyman/features/profile/presentation/pages/all_reviews_page.dart';
 import 'package:luxihub_handyman/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:luxihub_handyman/features/jobs/domain/entities/job_request.dart';
@@ -248,6 +252,14 @@ GoRouter createAppRouter(AuthBloc authBloc) {
         name: AppRoutes.allReviews.name,
         path: AppRoutes.allReviews.path,
         builder: (context, state) => const AllReviewsPage(),
+      ),
+      GoRoute(
+        name: AppRoutes.notifications.name,
+        path: AppRoutes.notifications.path,
+        builder: (context, state) => BlocProvider.value(
+          value: sl<NotificationsCubit>(),
+          child: const NotificationsPage(),
+        ),
       ),
     ],
   );

@@ -58,6 +58,7 @@ import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_dashboar
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_recent_earnings.dart';
 import 'package:luxihub_handyman/features/dashboard/domain/usecases/get_recent_job_requests.dart';
 import 'package:luxihub_handyman/features/dashboard/presentation/bloc/dashboard_bloc.dart';
+import 'package:luxihub_handyman/features/notifications/presentation/cubit/notifications_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -168,4 +169,8 @@ Future<void> setupServiceLocator() async {
         getRecentJobRequests: sl(),
         repository: sl(),
       ));
+
+  // ── Notifications ─────────────────────────────────────────────────────────
+  // Singleton so the unread count is consistent across the whole app session.
+  sl.registerLazySingleton(() => NotificationsCubit(sl()));
 }

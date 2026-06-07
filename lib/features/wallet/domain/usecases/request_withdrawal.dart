@@ -16,6 +16,9 @@ class RequestWithdrawal implements UseCase<Withdrawal, RequestWithdrawalParams> 
         amount: params.amount,
         bankName: params.bankName,
         accountLast4: params.accountLast4,
+        platformFeePercent: params.platformFeePercent,
+        feeAmount: params.feeAmount,
+        netAmount: params.netAmount,
       );
 }
 
@@ -24,12 +27,18 @@ class RequestWithdrawalParams extends Equatable {
   final double amount;
   final String bankName;
   final String accountLast4;
+  final double platformFeePercent;
+  final double feeAmount;
+  final double netAmount;
 
   const RequestWithdrawalParams({
     required this.profileId,
     required this.amount,
     required this.bankName,
     required this.accountLast4,
+    required this.platformFeePercent,
+    required this.feeAmount,
+    required this.netAmount,
   });
 
   @override

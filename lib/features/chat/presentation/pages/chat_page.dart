@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:luxihub_handyman/core/di/service_locator.dart';
 import 'package:luxihub_handyman/core/theme/app_colors.dart';
+import 'package:luxihub_handyman/features/chat/domain/repositories/chat_repository.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_state.dart';
@@ -12,13 +13,68 @@ import 'package:luxihub_handyman/features/chat/presentation/bloc/chat_event.dart
 import 'package:luxihub_handyman/features/chat/presentation/bloc/chat_state.dart';
 import 'package:luxihub_handyman/features/chat/presentation/widgets/chat_bubble.dart';
 
+// ── Formatting helpers ────────────────────────────────────────────────────────
+
 String _formatTime(String isoString) {
   final dt = DateTime.tryParse(isoString)?.toLocal();
   if (dt == null) return '';
-  final h = dt.hour.toString().padLeft(2, '0');
-  final m = dt.minute.toString().padLeft(2, '0');
-  return '$h:$m';
+  final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+  final minute = dt.minute.toString().padLeft(2, '0');
+  final period = dt.hour < 12 ? 'AM' : 'PM';
+  return '$hour:$minute $period';
 }
+
+String _formatDateLabel(DateTime dt) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = today.subtract(const Duration(days: 1));
+  final day = DateTime(dt.year, dt.month, dt.day);
+
+  if (day == today) return 'Today';
+  if (day == yesterday) return 'Yesterday';
+
+  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  final wd = weekdays[dt.weekday - 1];
+  final mo = months[dt.month - 1];
+  if (dt.year == now.year) return '$wd, ${dt.day} $mo';
+  return '$wd, ${dt.day} $mo ${dt.year}';
+}
+
+// ── List item union ───────────────────────────────────────────────────────────
+
+class _Item {
+  final Message? message;
+  final String? separator;
+  const _Item.msg(this.message) : separator = null;
+  const _Item.sep(this.separator) : message = null;
+  bool get isSep => separator != null;
+}
+
+// Builds a flat list (chronological) then reverses it for reverse:true ListView.
+List<_Item> _buildItems(List<Message> messages) {
+  final items = <_Item>[];
+  DateTime? lastDate;
+
+  for (final msg in messages) {
+    final dt = DateTime.tryParse(msg.createdAt)?.toLocal();
+    if (dt != null) {
+      final date = DateTime(dt.year, dt.month, dt.day);
+      if (lastDate == null || date != lastDate) {
+        items.add(_Item.sep(_formatDateLabel(dt)));
+        lastDate = date;
+      }
+    }
+    items.add(_Item.msg(msg));
+  }
+
+  return items.reversed.toList();
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -46,22 +102,35 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     _chatBloc = sl<ChatBloc>();
     _chatBloc.add(MessagesWatchStarted(widget.conversationId));
+    // markAsRead runs outside the bloc because emit.forEach in MessagesWatchStarted
+    // holds the event queue open, so any queued event behind it never executes.
+    sl<ChatRepository>().markAsRead(widget.conversationId).then((result) {
+      result.fold(
+        (failure) => debugPrint('[MarkAsRead] FAILED: ${failure.message}'),
+        (_) => debugPrint('[MarkAsRead] SUCCESS for conv: ${widget.conversationId}'),
+      );
+    });
   }
 
   @override
   void dispose() {
+    sl<ChatRepository>().markAsRead(widget.conversationId);
     _controller.dispose();
     _scrollController.dispose();
     _chatBloc.close();
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  // With reverse:true, position 0 = bottom of the chat.
+  void _scrollToBottom({bool jump = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (!_scrollController.hasClients) return;
+      if (jump) {
+        _scrollController.jumpTo(0);
+      } else {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          0,
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
         );
       }
@@ -80,7 +149,6 @@ class _ChatPageState extends State<ChatPage> {
     ));
     _controller.clear();
     setState(() {});
-    _scrollToBottom();
   }
 
   @override
@@ -146,11 +214,13 @@ class _ChatPageState extends State<ChatPage> {
         ),
         body: Column(
           children: [
-            // ── Messages ───────────────────────────────────────────────
+            // ── Messages ─────────────────────────────────────────────────
             Expanded(
               child: BlocConsumer<ChatBloc, ChatState>(
                 listener: (context, state) {
-                  if (state is MessagesLoaded) _scrollToBottom();
+                  if (state is MessagesLoaded) {
+                    _scrollToBottom(jump: state.messages.length <= 1);
+                  }
                   if (state is ChatError) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(state.message)),
@@ -181,12 +251,22 @@ class _ChatPageState extends State<ChatPage> {
                           ?.user
                           .id;
 
+                  final items = _buildItems(messages);
+
                   return ListView.builder(
                     controller: _scrollController,
-                    padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
-                    itemCount: messages.length,
+                    reverse: true,
+                    padding:
+                        EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
+                    itemCount: items.length,
                     itemBuilder: (context, index) {
-                      final msg = messages[index];
+                      final item = items[index];
+
+                      if (item.isSep) {
+                        return _DateSeparator(label: item.separator!);
+                      }
+
+                      final msg = item.message!;
                       return ChatBubble(
                         text: msg.text,
                         time: _formatTime(msg.createdAt),
@@ -198,7 +278,7 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
 
-            // ── Input bar ──────────────────────────────────────────────
+            // ── Input bar ────────────────────────────────────────────────
             Container(
               padding: EdgeInsets.fromLTRB(16.w, 10.h, 12.w, 24.h),
               decoration: BoxDecoration(
@@ -210,7 +290,6 @@ class _ChatPageState extends State<ChatPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  
                   Expanded(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxHeight: 120.h),
@@ -229,13 +308,13 @@ class _ChatPageState extends State<ChatPage> {
                           fillColor: AppColors.surfaceBackground,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(22.r),
-                            borderSide:
-                                const BorderSide(color: AppColors.inputBorder),
+                            borderSide: const BorderSide(
+                                color: AppColors.inputBorder),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(22.r),
-                            borderSide:
-                                const BorderSide(color: AppColors.inputBorder),
+                            borderSide: const BorderSide(
+                                color: AppColors.inputBorder),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(22.r),
@@ -276,6 +355,46 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Date separator widget ─────────────────────────────────────────────────────
+
+class _DateSeparator extends StatelessWidget {
+  const _DateSeparator({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.h),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: AppColors.divider, thickness: 1.h)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: Container(
+              padding:
+                  EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: Text(
+                label,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: 11.sp,
+                  color: AppColors.textHint,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          Expanded(child: Divider(color: AppColors.divider, thickness: 1.h)),
+        ],
       ),
     );
   }

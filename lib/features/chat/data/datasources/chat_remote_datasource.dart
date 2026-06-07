@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:luxihub_handyman/core/error/exceptions.dart';
 import 'package:luxihub_handyman/features/chat/data/models/conversation_model.dart';
@@ -12,6 +13,7 @@ abstract class ChatRemoteDatasource {
     required String text,
   });
   Stream<List<MessageModel>> watchMessages(String conversationId);
+  Future<void> markAsRead(String conversationId);
 }
 
 class ChatRemoteDatasourceImpl implements ChatRemoteDatasource {
@@ -72,5 +74,20 @@ class ChatRemoteDatasourceImpl implements ChatRemoteDatasource {
         .eq('conversation_id', conversationId)
         .order('created_at', ascending: true)
         .map((data) => data.map((e) => MessageModel.fromJson(e)).toList());
+  }
+
+  @override
+  Future<void> markAsRead(String conversationId) async {
+    try {
+      debugPrint('[MarkAsRead] Calling Supabase update for conv: $conversationId');
+      await client
+          .from('conversations')
+          .update({'unread_count': 0})
+          .eq('id', conversationId);
+      debugPrint('[MarkAsRead] Supabase update returned OK');
+    } catch (e) {
+      debugPrint('[MarkAsRead] Supabase exception: $e');
+      throw ServerException(e.toString());
+    }
   }
 }

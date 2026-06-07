@@ -14,6 +14,7 @@ import 'package:luxihub_handyman/core/theme/app_theme.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_event.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_state.dart';
+import 'package:luxihub_handyman/features/notifications/presentation/cubit/notifications_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 // ⚠️  Run `flutterfire configure` once to generate this file.
@@ -62,21 +63,41 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   late final GoRouter _router;
 
+  void _routeFromNotificationData(Map<String, dynamic> data) {
+    final type = data['type'] as String? ?? '';
+    switch (type) {
+      case 'chat_message':
+        _router.go(AppRoutes.inbox.path);
+      case 'job_update':
+      case 'job_request':
+        _router.go(AppRoutes.jobRequests.path);
+      case 'payment':
+        _router.go(AppRoutes.wallet.path);
+      default:
+        _router.go(AppRoutes.notifications.path);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _router = createAppRouter(widget.authBloc);
 
-    // App opened by tapping a notification while in background.
-    FirebaseMessaging.onMessageOpenedApp.listen((_) {
-      _router.go(AppRoutes.inbox.path);
+    // Foreground FCM → refresh the unread count in the cubit.
+    NotificationService.foregroundMessages.listen((_) {
+      sl<NotificationsCubit>().refresh();
     });
 
-    // App launched from a terminated state by tapping a notification.
+    // App opened by tapping a notification while in background.
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      _routeFromNotificationData(message.data);
+    });
+
+    // App launched from terminated state by tapping a notification.
     FirebaseMessaging.instance.getInitialMessage().then((message) {
       if (message != null) {
         Future.delayed(const Duration(milliseconds: 500), () {
-          _router.go(AppRoutes.inbox.path);
+          _routeFromNotificationData(message.data);
         });
       }
     });
@@ -93,6 +114,8 @@ class _MainAppState extends State<MainApp> {
               Supabase.instance.client,
               state.user.id,
             );
+            // Load notifications and start realtime subscription.
+            sl<NotificationsCubit>().load(state.user.id);
           }
         },
         child: ScreenUtilInit(

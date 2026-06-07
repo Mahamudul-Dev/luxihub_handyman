@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:luxihub_handyman/features/chat/domain/usecases/get_conversations.dart';
 import 'package:luxihub_handyman/features/chat/domain/usecases/get_messages.dart';
@@ -35,8 +36,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(const ChatLoading());
     final result = await getConversations(GetConversationsParams(event.providerId));
     result.fold(
-      (f) => emit(ChatError(f.message)),
-      (conversations) => emit(ConversationsLoaded(conversations)),
+      (f) {
+        debugPrint('[Inbox] Fetch conversations FAILED: ${f.message}');
+        emit(ChatError(f.message));
+      },
+      (conversations) {
+        for (final c in conversations) {
+          debugPrint('[Inbox] conv ${c.id} unreadCount=${c.unreadCount}');
+        }
+        emit(ConversationsLoaded(conversations));
+      },
     );
   }
 

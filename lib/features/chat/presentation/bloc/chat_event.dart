@@ -31,6 +31,14 @@ class MessagesWatchStarted extends ChatEvent {
   List<Object> get props => [conversationId];
 }
 
+class MarkAsReadRequested extends ChatEvent {
+  final String conversationId;
+  const MarkAsReadRequested(this.conversationId);
+
+  @override
+  List<Object> get props => [conversationId];
+}
+
 class MessageSendRequested extends ChatEvent {
   final String conversationId;
   final String senderId;

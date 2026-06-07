@@ -54,4 +54,14 @@ class ChatRepositoryImpl implements ChatRepository {
         .watchMessages(conversationId)
         .map((models) => models.map((m) => m.toEntity()).toList());
   }
+
+  @override
+  Future<Either<Failure, void>> markAsRead(String conversationId) async {
+    try {
+      await datasource.markAsRead(conversationId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
 }

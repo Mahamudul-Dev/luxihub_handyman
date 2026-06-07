@@ -11,6 +11,9 @@ abstract class WalletRemoteDatasource {
     required double amount,
     required String bankName,
     required String accountLast4,
+    required double platformFeePercent,
+    required double feeAmount,
+    required double netAmount,
   });
   Future<String> getStripeOnboardingUrl(String profileId);
 }
@@ -22,7 +25,6 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
   @override
   Future<WalletModel> getWalletBalance(String profileId) async {
     try {
-      // Try to fetch existing row first; insert with 0.0 only if absent.
       final existing = await client
           .from('wallet')
           .select()
@@ -35,15 +37,32 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
               .insert({'id': profileId, 'balance': 0.0})
               .select()
               .single();
+
       final profileData = await client
           .from('profiles')
           .select('stripe_account_id, stripe_payouts_enabled')
           .eq('id', profileId)
           .single();
+
+      // Fetch platform fee from settings table (defaults to 10 if missing)
+      double feePercent = 10.0;
+      try {
+        final feeSetting = await client
+            .from('settings')
+            .select('value')
+            .eq('key', 'platform_fee_percent')
+            .maybeSingle();
+        if (feeSetting != null) {
+          feePercent =
+              double.tryParse(feeSetting['value'] as String) ?? 10.0;
+        }
+      } catch (_) {}
+
       return WalletModel.fromJson({
         ...walletData,
         'stripe_account_id': profileData['stripe_account_id'],
         'stripe_payouts_enabled': profileData['stripe_payouts_enabled'],
+        'platform_fee_percent': feePercent,
       });
     } catch (e) {
       throw ServerException(e.toString());
@@ -70,6 +89,9 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
     required double amount,
     required String bankName,
     required String accountLast4,
+    required double platformFeePercent,
+    required double feeAmount,
+    required double netAmount,
   }) async {
     try {
       final data = await client.from('withdrawals').insert({
@@ -78,6 +100,9 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
         'bank_name': bankName,
         'account_last4': accountLast4,
         'status': 'pending',
+        'platform_fee_percent': platformFeePercent,
+        'fee_amount': feeAmount,
+        'net_amount': netAmount,
       }).select().single();
       return WithdrawalModel.fromJson(data);
     } catch (e) {

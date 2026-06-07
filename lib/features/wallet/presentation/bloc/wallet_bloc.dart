@@ -43,6 +43,9 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       amount: event.amount,
       bankName: event.bankName,
       accountLast4: event.accountLast4,
+      platformFeePercent: event.platformFeePercent,
+      feeAmount: event.feeAmount,
+      netAmount: event.netAmount,
     ));
     await result.fold(
       (f) async => emit(WalletError(f.message)),

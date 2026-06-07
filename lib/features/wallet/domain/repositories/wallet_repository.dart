@@ -11,6 +11,9 @@ abstract class WalletRepository {
     required double amount,
     required String bankName,
     required String accountLast4,
+    required double platformFeePercent,
+    required double feeAmount,
+    required double netAmount,
   });
   Future<Either<Failure, String>> getStripeOnboardingUrl(String profileId);
 }

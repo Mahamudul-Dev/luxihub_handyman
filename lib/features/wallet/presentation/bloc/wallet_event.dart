@@ -28,12 +28,18 @@ class WithdrawalRequested extends WalletEvent {
   final double amount;
   final String bankName;
   final String accountLast4;
+  final double platformFeePercent;
+  final double feeAmount;
+  final double netAmount;
 
   const WithdrawalRequested({
     required this.profileId,
     required this.amount,
     required this.bankName,
     required this.accountLast4,
+    required this.platformFeePercent,
+    required this.feeAmount,
+    required this.netAmount,
   });
 
   @override

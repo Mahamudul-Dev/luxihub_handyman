@@ -12,4 +12,5 @@ abstract class ChatRepository {
     required String text,
   });
   Stream<List<Message>> watchMessages(String conversationId);
+  Future<Either<Failure, void>> markAsRead(String conversationId);
 }

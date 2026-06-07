@@ -36,6 +36,9 @@ class WalletRepositoryImpl implements WalletRepository {
     required double amount,
     required String bankName,
     required String accountLast4,
+    required double platformFeePercent,
+    required double feeAmount,
+    required double netAmount,
   }) async {
     try {
       final model = await datasource.requestWithdrawal(
@@ -43,6 +46,9 @@ class WalletRepositoryImpl implements WalletRepository {
         amount: amount,
         bankName: bankName,
         accountLast4: accountLast4,
+        platformFeePercent: platformFeePercent,
+        feeAmount: feeAmount,
+        netAmount: netAmount,
       );
       return Right(model.toEntity());
     } on ServerException catch (e) {

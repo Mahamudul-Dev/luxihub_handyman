@@ -20,6 +20,7 @@ import 'package:luxihub_handyman/features/jobs/presentation/bloc/job_event.dart'
 import 'package:luxihub_handyman/features/jobs/presentation/bloc/job_state.dart';
 import 'package:luxihub_handyman/features/profile/domain/entities/profile.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:luxihub_handyman/features/notifications/presentation/cubit/notifications_cubit.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_event.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_state.dart';
 
@@ -85,6 +86,7 @@ class _DashboardPageState extends State<DashboardPage> {
         BlocProvider.value(value: _dashboardBloc),
         BlocProvider.value(value: _profileBloc),
         BlocProvider.value(value: _jobBloc),
+        BlocProvider.value(value: sl<NotificationsCubit>()),
       ],
       child: Scaffold(
         backgroundColor: AppColors.surfaceBackground,
@@ -269,26 +271,30 @@ class _DashboardAppBarWrapper extends StatelessWidget
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileBloc, ProfileState>(
-      builder: (context, state) {
-        final profile = switch (state) {
+      builder: (context, profileState) {
+        final profile = switch (profileState) {
           ProfileLoaded s => s.profile,
           ProfileUpdating s => s.profile,
           ProfileUploadingAvatar s => s.profile,
           _ => null,
         };
-        return DashboardAppBar(
-          name: profile?.name ?? '',
-          serviceArea: profile?.serviceArea ?? '',
-          notificationCount: 0,
-          isOnline: profile?.isOnline ?? true,
-          profileImageUrl: profile?.avatarPath,
-          onOnlineToggle: profile == null
-              ? null
-              : (value) => context.read<ProfileBloc>().add(
-                    ProfileUpdateRequested(
-                      profile.copyWith(isOnline: value),
+        return BlocBuilder<NotificationsCubit, NotificationsState>(
+          builder: (context, notifState) => DashboardAppBar(
+            name: profile?.name ?? '',
+            serviceArea: profile?.serviceArea ?? '',
+            notificationCount: notifState.unreadCount,
+            isOnline: profile?.isOnline ?? true,
+            profileImageUrl: profile?.avatarPath,
+            onNotificationTap: () =>
+                context.push(AppRoutes.notifications.path),
+            onOnlineToggle: profile == null
+                ? null
+                : (value) => context.read<ProfileBloc>().add(
+                      ProfileUpdateRequested(
+                        profile.copyWith(isOnline: value),
+                      ),
                     ),
-                  ),
+          ),
         );
       },
     );

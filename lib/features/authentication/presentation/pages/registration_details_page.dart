@@ -4,16 +4,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:luxihub_handyman/core/di/service_locator.dart';
 import 'package:luxihub_handyman/core/router/app_routes.dart';
+import 'package:luxihub_handyman/core/theme/app_colors.dart';
 import 'package:luxihub_handyman/core/theme/app_text_styles.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_bloc.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/bloc/auth_state.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/contract_type_selector.dart';
 import 'package:luxihub_handyman/features/authentication/presentation/widgets/registration_step_indicator.dart';
-import 'package:luxihub_handyman/features/authentication/presentation/widgets/skill_chip_input.dart';
 import 'package:luxihub_handyman/features/profile/domain/entities/profile.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_event.dart';
 import 'package:luxihub_handyman/features/profile/presentation/bloc/profile_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegistrationDetailsPage extends StatefulWidget {
   const RegistrationDetailsPage({super.key});
@@ -35,16 +36,45 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
   List<String> _skills = [];
   bool _isSaving = false;
 
+  // ── Category picker state ────────────────────────────────────────────────
+  List<_Category> _categories = [];
+  bool _loadingCategories = true;
+
   @override
   void initState() {
     super.initState();
     _profileBloc = sl<ProfileBloc>();
+    _fetchCategories();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         _profileBloc.add(ProfileFetchRequested(authState.user.id));
       }
     });
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final data = await sl<SupabaseClient>()
+          .from('categories')
+          .select('id, name, image_url')
+          .eq('is_active', true)
+          .order('sort_order');
+      if (mounted) {
+        setState(() {
+          _categories = (data as List)
+              .map((e) => _Category(
+                    id: e['id'] as String,
+                    name: e['name'] as String,
+                    imageUrl: e['image_url'] as String? ?? '',
+                  ))
+              .toList();
+          _loadingCategories = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingCategories = false);
+    }
   }
 
   @override
@@ -96,6 +126,16 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
         '${_selectedDate!.year}';
   }
 
+  void _toggleCategory(String name) {
+    setState(() {
+      if (_skills.contains(name)) {
+        _skills.remove(name);
+      } else {
+        _skills.add(name);
+      }
+    });
+  }
+
   void _onContinue() {
     final authState = context.read<AuthBloc>().state;
     if (authState is! AuthAuthenticated) return;
@@ -104,6 +144,13 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your full name')),
+      );
+      return;
+    }
+
+    if (_skills.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one skill')),
       );
       return;
     }
@@ -141,8 +188,8 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
       child: BlocConsumer<ProfileBloc, ProfileState>(
         listener: (context, state) {
           if (state is ProfileLoaded && !_isSaving) {
-            // Initial fetch — pre-fill fields
             _prefillFrom(state.profile);
+            setState(() {});
           }
           if (state is ProfileLoaded && _isSaving) {
             setState(() => _isSaving = false);
@@ -230,15 +277,85 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
 
                     SizedBox(height: 24.h),
 
-                    // ── Area of skills ──────────────────────────────────
-                    SkillChipInput(
-                      label: 'Area of Skills',
-                      hintText:
-                          'e.g. Plumbing, Electrical — press Enter to add',
-                      initialSkills: _skills,
-                      onChanged: (updated) =>
-                          setState(() => _skills = updated),
+                    // ── Area of Skills ──────────────────────────────────
+                    Text('Area of Skills', style: AppTextStyles.bodySmall),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Select all that apply',
+                      style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textHint, fontSize: 11.sp),
                     ),
+                    SizedBox(height: 12.h),
+
+                    if (_loadingCategories)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_categories.isEmpty)
+                      Text(
+                        'No categories available.',
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textHint),
+                      )
+                    else
+                      Wrap(
+                        spacing: 10.w,
+                        runSpacing: 10.h,
+                        children: _categories.map((cat) {
+                          final selected = _skills.contains(cat.name);
+                          return GestureDetector(
+                            onTap: () => _toggleCategory(cat.name),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 14.w, vertical: 10.h),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.primary
+                                    : AppColors.background,
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: selected
+                                      ? AppColors.primary
+                                      : AppColors.inputBorder,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (cat.imageUrl.isNotEmpty)
+                                    Image.network(
+                                      cat.imageUrl,
+                                      width: 20.r,
+                                      height: 20.r,
+                                      color: selected
+                                          ? AppColors.textOnPrimary
+                                          : null,
+                                      colorBlendMode: selected
+                                          ? BlendMode.srcIn
+                                          : null,
+                                      errorBuilder: (_, _, _) =>
+                                          Icon(Icons.build_outlined,
+                                              size: 18.r,
+                                              color: selected
+                                                  ? AppColors.textOnPrimary
+                                                  : AppColors.textSecondary),
+                                    ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    cat.name,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: selected
+                                          ? AppColors.textOnPrimary
+                                          : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
 
                     SizedBox(height: 24.h),
 
@@ -261,7 +378,8 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
                           decimal: true),
                       decoration: InputDecoration(
                         hintText: 'Hourly Rate',
-                        prefixIcon: Icon(Icons.euro, size: 20.r),
+                        prefixIcon:
+                            Icon(Icons.currency_pound_rounded, size: 20.r),
                         suffixText: '/ hr',
                       ),
                     ),
@@ -276,7 +394,8 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
                               height: 20.r,
                               width: 20.r,
                               child: const CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                  strokeWidth: 2,
+                                  color: Colors.white),
                             )
                           : const Text('Continue'),
                     ),
@@ -291,4 +410,15 @@ class _RegistrationDetailsPageState extends State<RegistrationDetailsPage> {
       ),
     );
   }
+}
+
+class _Category {
+  final String id;
+  final String name;
+  final String imageUrl;
+  const _Category({
+    required this.id,
+    required this.name,
+    required this.imageUrl,
+  });
 }

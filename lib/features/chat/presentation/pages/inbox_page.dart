@@ -314,15 +314,32 @@ class _InboxPageState extends State<InboxPage> {
                                       time: _relativeTime(c.lastMessageAt),
                                       unreadCount: c.unreadCount,
                                       jobCategory: c.jobCategory ?? '',
-                                      onTap: () => context.push(
-                                        AppRoutes.chat.path,
-                                        extra: (
-                                          clientName:
-                                              c.clientName ?? 'Unknown',
-                                          jobCategory: c.jobCategory ?? '',
-                                          conversationId: c.id,
-                                        ),
-                                      ),
+                                      onTap: () {
+                                          final auth =
+                                              context.read<AuthBloc>().state;
+                                          context
+                                              .push(
+                                                AppRoutes.chat.path,
+                                                extra: (
+                                                  clientName:
+                                                      c.clientName ?? 'Unknown',
+                                                  jobCategory:
+                                                      c.jobCategory ?? '',
+                                                  conversationId: c.id,
+                                                ),
+                                              )
+                                              .then((_) {
+                                                debugPrint('[Inbox] Returned from chat — refetching conversations');
+                                                if (auth is AuthAuthenticated) {
+                                                  _chatBloc.add(
+                                                    ConversationsFetchRequested(
+                                                        auth.user.id),
+                                                  );
+                                                } else {
+                                                  debugPrint('[Inbox] Auth state is ${auth.runtimeType} — not fetching');
+                                                }
+                                              });
+                                        },
                                     );
                                   },
                                 ),

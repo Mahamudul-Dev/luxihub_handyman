@@ -8,10 +8,12 @@ class WalletBalanceCard extends StatelessWidget {
     super.key,
     required this.balance,
     required this.onWithdraw,
+    this.platformFeePercent = 10.0,
   });
 
   final double balance;
   final VoidCallback onWithdraw;
+  final double platformFeePercent;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +94,26 @@ class WalletBalanceCard extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 24.h),
+          SizedBox(height: 8.h),
+
+          // ── Fee notice ────────────────────────────────────────────────────
+          Row(
+            children: [
+              Icon(Icons.info_outline_rounded,
+                  size: 13.r,
+                  color: AppColors.textOnPrimary.withValues(alpha: 0.6)),
+              SizedBox(width: 5.w),
+              Text(
+                '${platformFeePercent.toStringAsFixed(0)}% platform fee applies on withdrawal',
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: 11.sp,
+                  color: AppColors.textOnPrimary.withValues(alpha: 0.65),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 20.h),
 
           // ── Withdraw button ───────────────────────────────────────────────
           SizedBox(

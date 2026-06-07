@@ -73,6 +73,10 @@ class AppRoutes {
     name: 'AllReviews',
     path: '/profile/reviews',
   );
+  static const RouteModel notifications = RouteModel(
+    name: 'Notifications',
+    path: '/notifications',
+  );
 }
 
 class RouteModel {
