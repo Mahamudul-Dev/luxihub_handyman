@@ -148,6 +148,7 @@ class _JobRequestDetailsPageState extends State<JobRequestDetailsPage> {
                       jobCategory: job.category,
                       postedAgo: _relativeTime(job.postedAt),
                       status: job.status,
+                      offerPrice: job.offerPrice,
                       showDetailsButton: false,
                       onAccept: (job.status == 'pending' && !loading)
                           ? () => _jobBloc.add(JobRequestAccepted(job.id))
@@ -159,6 +160,124 @@ class _JobRequestDetailsPageState extends State<JobRequestDetailsPage> {
                   },
                 ),
 
+                // ── Offline Payment Confirmation Button ──────────────────
+                if (job.status == 'awaiting_offline_confirmation') ...[
+                  SizedBox(height: 16.h),
+                  BlocBuilder<JobBloc, JobState>(
+                    builder: (context, state) {
+                      final loading = state is JobLoading;
+                      return Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(16.r),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(16.r),
+                          border: Border.all(
+                            color: const Color(0xFFFB923C),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.pending_actions_rounded,
+                                  color: const Color(0xFFEA580C),
+                                  size: 24.r,
+                                ),
+                                SizedBox(width: 8.w),
+                                Expanded(
+                                  child: Text(
+                                    'Awaiting Offline Payment Confirmation',
+                                    style: AppTextStyles.titleMedium.copyWith(
+                                      color: const Color(0xFFEA580C),
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              'Client has selected to pay in cash. Please confirm once you receive the payment to complete this job.',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: const Color(0xFF9A3412),
+                                height: 1.5,
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: loading
+                                    ? null
+                                    : () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text('Confirm Payment'),
+                                            content: const Text(
+                                              'Have you received the cash payment from the client?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  _jobBloc.add(
+                                                    JobOfflinePaymentConfirmed(job.id),
+                                                  );
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: AppColors.success,
+                                                ),
+                                                child: const Text(
+                                                  'Yes, Confirm',
+                                                  style: TextStyle(color: Colors.white),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                icon: loading
+                                    ? SizedBox(
+                                        width: 20.r,
+                                        height: 20.r,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Icon(Icons.check_circle_outline, size: 20.r),
+                                label: Text(
+                                  loading ? 'Confirming...' : 'Confirm Cash Payment Received',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.success,
+                                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+
                 SizedBox(height: 24.h),
 
                 // ── 3. Issue details ─────────────────────────────────────
@@ -166,12 +285,82 @@ class _JobRequestDetailsPageState extends State<JobRequestDetailsPage> {
 
                 SizedBox(height: 24.h),
 
-                // ── 4. Attachments ───────────────────────────────────────
+                // ── 4. Offer Price (if available) ────────────────────────
+                if (job.offerPrice != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16.r),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.08),
+                          AppColors.primary.withValues(alpha: 0.03),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12.r),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Icon(
+                            Icons.payments_rounded,
+                            color: AppColors.primary,
+                            size: 28.r,
+                          ),
+                        ),
+                        SizedBox(width: 16.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Client Offer Price',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                '€${job.offerPrice!.toStringAsFixed(0)}',
+                                style: AppTextStyles.titleLarge.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 24.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.verified_rounded,
+                          color: AppColors.primary.withValues(alpha: 0.5),
+                          size: 24.r,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+                ],
+
+                // ── 5. Attachments ───────────────────────────────────────
                 JobAttachmentsGrid(paths: job.attachmentPaths),
 
                 SizedBox(height: 24.h),
 
-                // ── 5. Completed state OR live map ───────────────────────
+                // ── 6. Completed state OR live map ───────────────────────
                 if (_isCompleted) ...[
                   _CompletedCard(),
                   SizedBox(height: 20.h),

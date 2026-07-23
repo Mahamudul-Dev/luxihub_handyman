@@ -10,6 +10,7 @@ class JobRequest extends Equatable {
   final String status;
   final double clientLat;
   final double clientLng;
+  final double? offerPrice;
   final String postedAt;
   final String? completedAt;
   final List<String> attachmentPaths;
@@ -24,6 +25,7 @@ class JobRequest extends Equatable {
     required this.status,
     required this.clientLat,
     required this.clientLng,
+    this.offerPrice,
     required this.postedAt,
     this.completedAt,
     this.attachmentPaths = const [],

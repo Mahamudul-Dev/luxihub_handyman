@@ -192,6 +192,7 @@ class _JobRequestPageState extends State<JobRequestPage> {
                   if (state is JobActionSuccess) {
                     _fetchJobs();
                   } else if (state is JobError) {
+                    debugPrint('Job error: ${state.message}');
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(state.message)),
                     );
@@ -291,6 +292,7 @@ class _JobRequestPageState extends State<JobRequestPage> {
                                       jobCategory: job.category,
                                       postedAgo: _relativeTime(job.postedAt),
                                       status: job.status,
+                                      offerPrice: job.offerPrice,
                                       onAccept: () => _jobBloc
                                           .add(JobRequestAccepted(job.id)),
                                       onReject: () => _jobBloc

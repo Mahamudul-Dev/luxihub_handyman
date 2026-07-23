@@ -28,6 +28,7 @@ import 'package:luxihub_handyman/features/jobs/data/datasources/job_remote_datas
 import 'package:luxihub_handyman/features/jobs/data/repositories/job_repository_impl.dart';
 import 'package:luxihub_handyman/features/jobs/domain/repositories/job_repository.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/accept_job_request.dart';
+import 'package:luxihub_handyman/features/jobs/domain/usecases/confirm_offline_payment.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/get_job_request_details.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/get_job_requests.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/reject_job_request.dart';
@@ -116,11 +117,13 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton(() => GetJobRequestDetails(sl()));
   sl.registerLazySingleton(() => AcceptJobRequest(sl()));
   sl.registerLazySingleton(() => RejectJobRequest(sl()));
+  sl.registerLazySingleton(() => ConfirmOfflinePayment(sl()));
   sl.registerFactory(() => JobBloc(
         getJobRequests: sl(),
         getJobRequestDetails: sl(),
         acceptJobRequest: sl(),
         rejectJobRequest: sl(),
+        confirmOfflinePayment: sl(),
       ));
 
   // ── Wallet ────────────────────────────────────────────────────────────────

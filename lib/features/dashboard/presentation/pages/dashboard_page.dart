@@ -199,6 +199,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   jobCategory: job.category,
                                   postedAgo: _relativeTime(job.postedAt),
                                   status: job.status,
+                                  offerPrice: job.offerPrice,
                                   onAccept: () => context
                                       .read<JobBloc>()
                                       .add(JobRequestAccepted(job.id)),

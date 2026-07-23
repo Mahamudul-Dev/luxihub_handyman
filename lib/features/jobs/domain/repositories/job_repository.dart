@@ -7,4 +7,5 @@ abstract class JobRepository {
   Future<Either<Failure, JobRequest>> getJobRequestDetails(String jobId);
   Future<Either<Failure, JobRequest>> acceptJobRequest(String jobId);
   Future<Either<Failure, JobRequest>> rejectJobRequest(String jobId);
+  Future<Either<Failure, JobRequest>> confirmOfflinePayment(String jobId);
 }

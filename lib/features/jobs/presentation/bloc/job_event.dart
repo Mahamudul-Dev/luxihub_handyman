@@ -38,3 +38,11 @@ class JobRequestRejected extends JobEvent {
   @override
   List<Object> get props => [jobId];
 }
+
+class JobOfflinePaymentConfirmed extends JobEvent {
+  final String jobId;
+  const JobOfflinePaymentConfirmed(this.jobId);
+
+  @override
+  List<Object> get props => [jobId];
+}

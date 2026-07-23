@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/accept_job_request.dart';
+import 'package:luxihub_handyman/features/jobs/domain/usecases/confirm_offline_payment.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/get_job_request_details.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/get_job_requests.dart';
 import 'package:luxihub_handyman/features/jobs/domain/usecases/reject_job_request.dart';
@@ -11,17 +12,20 @@ class JobBloc extends Bloc<JobEvent, JobState> {
   final GetJobRequestDetails getJobRequestDetails;
   final AcceptJobRequest acceptJobRequest;
   final RejectJobRequest rejectJobRequest;
+  final ConfirmOfflinePayment confirmOfflinePayment;
 
   JobBloc({
     required this.getJobRequests,
     required this.getJobRequestDetails,
     required this.acceptJobRequest,
     required this.rejectJobRequest,
+    required this.confirmOfflinePayment,
   }) : super(const JobInitial()) {
     on<JobRequestsFetchRequested>(_onFetch);
     on<JobRequestDetailsFetchRequested>(_onFetchDetails);
     on<JobRequestAccepted>(_onAccept);
     on<JobRequestRejected>(_onReject);
+    on<JobOfflinePaymentConfirmed>(_onConfirmOfflinePayment);
   }
 
   Future<void> _onFetch(JobRequestsFetchRequested event, Emitter<JobState> emit) async {
@@ -52,6 +56,15 @@ class JobBloc extends Bloc<JobEvent, JobState> {
 
   Future<void> _onReject(JobRequestRejected event, Emitter<JobState> emit) async {
     final result = await rejectJobRequest(JobIdParams(event.jobId));
+    result.fold(
+      (f) => emit(JobError(f.message)),
+      (job) => emit(JobActionSuccess(job)),
+    );
+  }
+
+  Future<void> _onConfirmOfflinePayment(JobOfflinePaymentConfirmed event, Emitter<JobState> emit) async {
+    emit(const JobLoading());
+    final result = await confirmOfflinePayment(JobIdParams(event.jobId));
     result.fold(
       (f) => emit(JobError(f.message)),
       (job) => emit(JobActionSuccess(job)),

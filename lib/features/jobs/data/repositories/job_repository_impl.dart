@@ -48,4 +48,14 @@ class JobRepositoryImpl implements JobRepository {
       return Left(ServerFailure(e.message));
     }
   }
+
+  @override
+  Future<Either<Failure, JobRequest>> confirmOfflinePayment(String jobId) async {
+    try {
+      final model = await datasource.confirmOfflinePayment(jobId);
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
 }

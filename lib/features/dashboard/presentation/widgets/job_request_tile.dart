@@ -10,6 +10,7 @@ class JobRequestTile extends StatelessWidget {
     required this.jobCategory,
     this.status = 'pending',
     this.distanceKm,
+    this.offerPrice,
     this.clientImageUrl,
     this.postedAgo = 'Just now',
     this.showDetailsButton = true,
@@ -25,6 +26,7 @@ class JobRequestTile extends StatelessWidget {
   final String status;
 
   final double? distanceKm;
+  final double? offerPrice;
   final String? clientImageUrl;
   final String postedAgo;
 
@@ -183,6 +185,41 @@ class JobRequestTile extends StatelessWidget {
               ),
             ],
           ),
+
+          // ── Offer Price (if available) ────────────────────────────────
+          if (offerPrice != null) ...[
+            SizedBox(height: 12.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.splashBackground,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.payments_outlined, size: 16.r, color: AppColors.primary),
+                  SizedBox(width: 6.w),
+                  Text(
+                    'Offered: ',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                  Text(
+                    '€${offerPrice!.toStringAsFixed(0)}',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           SizedBox(height: 14.h),
           const Divider(height: 1),

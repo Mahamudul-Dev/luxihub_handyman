@@ -10,6 +10,7 @@ class JobRequestModel {
   final String status;
   final double clientLat;
   final double clientLng;
+  final double? offerPrice;
   final String postedAt;
   final String? completedAt;
   final List<String> attachmentPaths;
@@ -24,6 +25,7 @@ class JobRequestModel {
     required this.status,
     required this.clientLat,
     required this.clientLng,
+    this.offerPrice,
     required this.postedAt,
     this.completedAt,
     this.attachmentPaths = const [],
@@ -39,6 +41,7 @@ class JobRequestModel {
         status: json['status'] as String,
         clientLat: (json['client_lat'] as num).toDouble(),
         clientLng: (json['client_lng'] as num).toDouble(),
+        offerPrice: json['amount'] != null ? (json['amount'] as num).toDouble() : null,
         postedAt: json['posted_at'] as String,
         completedAt: json['completed_at'] as String?,
         attachmentPaths: (json['job_attachments'] as List<dynamic>?)
@@ -57,6 +60,7 @@ class JobRequestModel {
         status: status,
         clientLat: clientLat,
         clientLng: clientLng,
+        offerPrice: offerPrice,
         postedAt: postedAt,
         completedAt: completedAt,
         attachmentPaths: attachmentPaths,
