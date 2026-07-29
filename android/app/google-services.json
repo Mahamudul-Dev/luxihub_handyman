@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:244453413198:android:960a7683e61f72498c0e1f",
+        "mobilesdk_app_id": "1:244453413198:android:a2585487a72124718c0e1f",
         "android_client_info": {
-          "package_name": "com.example.luxihub_handyman"
+          "package_name": "com.luxihub.handymanapp"
         }
       },
       "oauth_client": [],
@@ -26,9 +26,28 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:244453413198:android:4316205f57fd36578c0e1f",
+        "mobilesdk_app_id": "1:244453413198:android:b30e58d4414eb4048c0e1f",
         "android_client_info": {
-          "package_name": "com.example.luxihub_user"
+          "package_name": "com.luxihub.user_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAD3Hq9b9sOieG3yQshHyCwSMHH-fZ7KJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:244453413198:android:c32d5dc1991b10e58c0e1f",
+        "android_client_info": {
+          "package_name": "com.luxihub.userapp"
         }
       },
       "oauth_client": [],
