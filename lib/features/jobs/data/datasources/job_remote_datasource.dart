@@ -100,8 +100,23 @@ class JobRemoteDatasourceImpl implements JobRemoteDatasource {
         throw ServerException('Invalid provider');
       }
 
-      // 2. Calculate platform fee (10%)
-      const platformFeePercent = 0.10;
+      // 2. Calculate platform fee — read from platform_settings (admin-
+      // controlled), falling back to 10% only if the setting is missing.
+      double platformFeePercent = 0.10;
+      try {
+        final feeSetting = await client
+            .from('platform_settings')
+            .select('value')
+            .eq('key', 'platform_fee_percent')
+            .maybeSingle();
+        final rawValue = feeSetting?['value'];
+        if (rawValue != null) {
+          final percent = rawValue is num
+              ? rawValue.toDouble()
+              : double.tryParse(rawValue.toString());
+          if (percent != null) platformFeePercent = percent / 100;
+        }
+      } catch (_) {}
       final platformFee = amount * platformFeePercent;
 
       // 3. Get current wallet balance
@@ -116,7 +131,7 @@ class JobRemoteDatasourceImpl implements JobRemoteDatasource {
 
       debugPrint('💰 Offline Payment Confirmation:');
       debugPrint('   Job Amount: €$amount');
-      debugPrint('   Platform Fee (10%): €$platformFee');
+      debugPrint('   Platform Fee (${(platformFeePercent * 100).toStringAsFixed(1)}%): €$platformFee');
       debugPrint('   Current Balance: €$currentBalance');
       debugPrint('   New Balance: €$newBalance');
 

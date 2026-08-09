@@ -28,6 +28,7 @@ import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_de
 import 'package:luxihub_handyman/features/jobs/presentation/pages/job_request_page.dart';
 import 'package:luxihub_handyman/features/profile/domain/entities/profile.dart';
 import 'package:luxihub_handyman/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:luxihub_handyman/features/transactions/presentation/pages/transaction_history_page.dart';
 import 'package:luxihub_handyman/features/profile/presentation/pages/profile_page.dart';
 import 'package:luxihub_handyman/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:luxihub_handyman/features/wallet/presentation/pages/withdrawals_page.dart';
@@ -252,6 +253,11 @@ GoRouter createAppRouter(AuthBloc authBloc) {
         name: AppRoutes.allReviews.name,
         path: AppRoutes.allReviews.path,
         builder: (context, state) => const AllReviewsPage(),
+      ),
+      GoRoute(
+        name: AppRoutes.transactions.name,
+        path: AppRoutes.transactions.path,
+        builder: (context, state) => const TransactionHistoryPage(),
       ),
       GoRoute(
         name: AppRoutes.notifications.name,

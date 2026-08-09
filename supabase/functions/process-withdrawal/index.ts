@@ -79,13 +79,44 @@ Deno.serve(async (req) => {
       return json({ error: 'Provider has no connected Stripe account' }, 400);
     }
 
-    // Use net_amount (after platform fee) if available; fall back to gross amount
-    // for legacy rows created before fee columns existed.
-    const payoutAmount: number = withdrawal.net_amount > 0
-      ? withdrawal.net_amount
-      : withdrawal.amount;
+    // Recompute the platform fee here, from the live platform_settings value,
+    // rather than trusting withdrawal.fee_amount/net_amount as stored. Those
+    // were computed client-side when the withdrawal was requested — using
+    // them directly for the actual transfer would mean a modified client (or
+    // a stale admin-configured fee at request time) could under-pay the
+    // platform. This is the one place real money moves, so it's the one place
+    // the admin-configured fee has to be authoritative.
+    const grossAmount: number = withdrawal.amount;
+    let feePercent = 10.0;
+    try {
+      const { data: feeSetting } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'platform_fee_percent')
+        .maybeSingle();
+      const rawValue = feeSetting?.value;
+      if (rawValue !== null && rawValue !== undefined) {
+        const parsed = typeof rawValue === 'number' ? rawValue : parseFloat(String(rawValue));
+        if (!Number.isNaN(parsed)) feePercent = parsed;
+      }
+    } catch (_err) {
+      // Fall back to the 10% default below if platform_settings is unreachable.
+    }
+    const feeAmount = Math.round(grossAmount * (feePercent / 100) * 100) / 100;
+    const payoutAmount = Math.round((grossAmount - feeAmount) * 100) / 100;
     const amountCents = Math.round(payoutAmount * 100);
     const currency: string = withdrawal.currency ?? 'gbp';
+
+    // Persist the authoritative figures so the stored record matches what's
+    // actually transferred, regardless of what was estimated at request time.
+    await supabase
+      .from('withdrawals')
+      .update({
+        platform_fee_percent: feePercent,
+        fee_amount: feeAmount,
+        net_amount: payoutAmount,
+      })
+      .eq('id', withdrawal_id);
 
     // ── 8. Create the Stripe transfer (platform → connected account) ───────
     let transfer: Stripe.Transfer;
@@ -95,14 +126,15 @@ Deno.serve(async (req) => {
         currency,
         destination: stripeAccountId,
         transfer_group: `withdrawal_${withdrawal_id}`,
-        description: `Withdrawal for ${profile?.name ?? user.id} (gross £${withdrawal.amount}, fee £${withdrawal.fee_amount ?? 0})`,
+        description: `Withdrawal for ${profile?.name ?? user.id} (gross £${grossAmount}, fee £${feeAmount})`,
         metadata: {
           withdrawal_id,
           provider_id: user.id,
           provider_stripe_account: stripeAccountId,
-          gross_amount: String(withdrawal.amount),
-          fee_amount: String(withdrawal.fee_amount ?? 0),
+          gross_amount: String(grossAmount),
+          fee_amount: String(feeAmount),
           net_amount: String(payoutAmount),
+          platform_fee_percent: String(feePercent),
         },
       });
     } catch (stripeErr) {

@@ -77,6 +77,10 @@ class AppRoutes {
     name: 'Notifications',
     path: '/notifications',
   );
+  static const RouteModel transactions = RouteModel(
+    name: 'Transactions',
+    path: '/transactions',
+  );
 }
 
 class RouteModel {

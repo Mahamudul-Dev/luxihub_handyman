@@ -553,6 +553,10 @@ class _ProfileBody extends StatelessWidget {
                     label: 'Edit Profile',
                     onTap: onEditProfile ?? () {}),
                 ProfileActionTile(
+                    icon: Icons.receipt_long_outlined,
+                    label: 'Transaction History',
+                    onTap: () => context.push(AppRoutes.transactions.path)),
+                ProfileActionTile(
                     icon: Icons.help_outline_rounded,
                     label: 'Help & Support',
                     onTap: () {}),

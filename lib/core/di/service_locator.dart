@@ -38,6 +38,12 @@ import 'package:luxihub_handyman/features/wallet/data/datasources/wallet_remote_
 import 'package:luxihub_handyman/features/wallet/data/repositories/wallet_repository_impl.dart';
 import 'package:luxihub_handyman/features/wallet/domain/repositories/wallet_repository.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/get_stripe_onboarding_url.dart';
+import 'package:luxihub_handyman/features/transactions/data/datasources/transactions_remote_datasource.dart';
+import 'package:luxihub_handyman/features/transactions/data/repositories/transactions_repository_impl.dart';
+import 'package:luxihub_handyman/features/transactions/domain/repositories/transactions_repository.dart';
+import 'package:luxihub_handyman/features/transactions/domain/usecases/get_invoice_pdf.dart';
+import 'package:luxihub_handyman/features/transactions/domain/usecases/get_transactions.dart';
+import 'package:luxihub_handyman/features/transactions/presentation/bloc/transactions_bloc.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/get_wallet_balance.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/get_withdrawals.dart';
 import 'package:luxihub_handyman/features/wallet/domain/usecases/request_withdrawal.dart';
@@ -141,6 +147,15 @@ Future<void> setupServiceLocator() async {
         requestWithdrawal: sl(),
         getStripeOnboardingUrl: sl(),
       ));
+
+  // ── Transactions ─────────────────────────────────────────────────────────
+  sl.registerLazySingleton<TransactionsRemoteDatasource>(
+      () => TransactionsRemoteDatasourceImpl(sl()));
+  sl.registerLazySingleton<TransactionsRepository>(
+      () => TransactionsRepositoryImpl(sl()));
+  sl.registerLazySingleton(() => GetTransactions(sl()));
+  sl.registerLazySingleton(() => GetInvoicePdf(sl()));
+  sl.registerFactory(() => TransactionsBloc(getTransactions: sl()));
 
   // ── Chat ──────────────────────────────────────────────────────────────────
   sl.registerLazySingleton<ChatRemoteDatasource>(

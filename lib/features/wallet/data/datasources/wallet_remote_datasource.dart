@@ -44,17 +44,21 @@ class WalletRemoteDatasourceImpl implements WalletRemoteDatasource {
           .eq('id', profileId)
           .single();
 
-      // Fetch platform fee from settings table (defaults to 10 if missing)
+      // Fetch platform fee from platform_settings (admin-controlled; defaults
+      // to 10 if missing). `value` is jsonb, so it may decode as num or String
+      // depending on how it was written — handle both.
       double feePercent = 10.0;
       try {
         final feeSetting = await client
-            .from('settings')
+            .from('platform_settings')
             .select('value')
             .eq('key', 'platform_fee_percent')
             .maybeSingle();
-        if (feeSetting != null) {
-          feePercent =
-              double.tryParse(feeSetting['value'] as String) ?? 10.0;
+        final rawValue = feeSetting?['value'];
+        if (rawValue != null) {
+          feePercent = rawValue is num
+              ? rawValue.toDouble()
+              : double.tryParse(rawValue.toString()) ?? 10.0;
         }
       } catch (_) {}
 
